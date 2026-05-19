@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Диагностика — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css"><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="components.css"><link rel="stylesheet" href="app.css">
+</head>
+<body style="background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+<div class="quiz-container" style="width:100%">
+  <!-- Header -->
+  <div class="quiz-header" id="quizHeader">
+    <div class="quiz-progress-wrap">
+      <div style="font-size:.8rem;color:var(--text-3);margin-bottom:6px"><span id="qNum">Вопрос 1</span> из 10</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="qProgress" style="width:10%"></div></div>
+    </div>
+    <div class="quiz-timer" id="qTimer">60</div>
+  </div>
+
+  <!-- Question -->
+  <div id="quizArea">
+    <div class="question-card" id="questionCard">
+      <p class="question-text" id="questionText"></p>
+      <div class="answer-options" id="answerOptions"></div>
+    </div>
+    <div class="feedback-panel" id="feedbackPanel">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="feedback-text" id="feedbackText"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" id="skipBtn" onclick="nextQ()">Пропустить →</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" style="display:none">Следующий вопрос →</button>
+    </div>
+  </div>
+
+  <!-- Result screen -->
+  <div id="resultScreen" style="display:none">
+    <div class="result-screen">
+      <div class="result-icon" id="resIcon"></div>
+      <div class="result-score" id="resScore"></div>
+      <div class="result-label">из 100 баллов</div>
+      <div class="result-level-card" id="resLevel"></div>
+      <div class="result-breakdown" id="resBreakdown"></div>
+      <a href="ai-plan.html" class="btn btn-primary btn-lg btn-full">Получить AI-план обучения →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions=[
+  {q:"Ты получил письмо: «Срочно! Твой аккаунт будет заблокирован. Перейди по ссылке: http://bank-secure-update.tk». Что делаешь?",opts:["Перехожу по ссылке и ввожу данные","Игнорирую письмо и сообщаю в банк","Отвечаю на письмо с просьбой уточнить","Пересылаю письмо другу"],correct:1,exp:"Письма с угрозой блокировки и подозрительными ссылками — классический фишинг. Легитимные банки не требуют данные через email."},
+  {q:"Как выглядит безопасный URL сайта для ввода пароля?",opts:["http://mybank.com","https://mybank.com","http://secure-mybank.net","https://mybank.login-secure.com"],correct:1,exp:"Только HTTPS с правильным доменом — httpS и оригинальный домен (mybank.com), а не поддомен подозрительного сайта."},
+  {q:"Незнакомец в соцсети пишет: «Привет, я из службы безопасности. Нам нужен твой код из СМС для проверки». Что делаешь?",opts:["Даю код — это же служба безопасности","Прошу подтверждение личности","Отказываю — настоящие службы никогда не просят коды из СМС","Даю код, если он кажется вежливым"],correct:2,exp:"Никогда не делись кодами из СМС! Это одноразовые коды аутентификации. Их запрос — 100% мошенничество."},
+  {q:"Какой пароль самый надёжный?",opts:["password123","Кот1234","3#Xm!qK9pL","мояДатаРождения"],correct:2,exp:"Надёжный пароль содержит: заглавные и строчные буквы, цифры, символы и длину 8+ символов. Случайные комбинации лучше всего."},
+  {q:"Ты нашёл QR-код в торговом центре с надписью «Сканируй для скидки 50%!». Что делаешь?",opts:["Сканирую сразу — скидка же!","Сначала проверяю URL после сканирования, не переходя","Сканирую только если рядом стоит промоутер","Не сканирую незнакомые QR-коды в публичных местах"],correct:3,exp:"QR-коды в публичных местах могут вести на фишинговые сайты или автоматически запускать вредоносные скрипты."},
+  {q:"Письмо от «support@apple-id-verify.ru» просит подтвердить Apple ID. Что подозрительно?",opts:["Ничего — это от Apple","Домен не apple.com, а apple-id-verify.ru","Тема письма","Время отправки"],correct:1,exp:"Официальные письма Apple приходят только с доменов @apple.com или @email.apple.com. Любой другой домен — фишинг."},
+  {q:"Тебе пришёл файл «invoice.pdf.exe» по email. Что это значит?",opts:["Обычный PDF-документ","Исполняемый файл, замаскированный под PDF — вредоносное ПО","Сжатый архив","Картинка в формате EXE"],correct:1,exp:"Расширение .exe означает исполняемый файл. .pdf.exe — трюк для маскировки: настоящий тип файла — EXE (программа), а не PDF."},
+  {q:"На каком Wi-Fi опасно вводить пароли и банковские данные?",opts:["Домашняя защищённая сеть","Корпоративная VPN","Открытая сеть 'Free_Airport_WiFi'","Сеть с сильным паролем WPA3"],correct:2,exp:"Публичные открытые Wi-Fi сети не шифруют трафик. Злоумышленник в той же сети может перехватить твои данные (атака MITM)."},
+  {q:"Что из этого НЕ стоит указывать в публичном профиле соцсети?",opts:["Любимая книга","Дата рождения и номер телефона","Город проживания (общий)","Хобби и интересы"],correct:1,exp:"Дата рождения + телефон — золото для мошенников. Это помогает взломать аккаунты через восстановление пароля и совершить атаки на личность."},
+  {q:"Что делать, если сайт показывает 'Небезопасное подключение' (не HTTPS)?",opts:["Всё равно ввожу данные — ничего страшного","Закрываю и не ввожу никаких личных данных","Нажимаю 'Дополнительно' и продолжаю","Перезагружаю страницу"],correct:1,exp:"Без HTTPS данные передаются в открытом виде. Любой, кто находится в той же сети, может их перехватить и прочитать."}
+];
+
+let current=0, score=0, timer=null, timeLeft=60, answered=false, answers=[];
+
+function loadQ(){
+  const q=questions[current];
+  document.getElementById('questionText').textContent=q.q;
+  document.getElementById('qNum').textContent='Вопрос '+(current+1);
+  document.getElementById('qProgress').style.width=((current+1)/questions.length*100)+'%';
+  const opts=document.getElementById('answerOptions');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const btn=document.createElement('button');
+    btn.className='answer-opt';
+    btn.innerHTML=`<span class="opt-letter">${'ABCD'[i]}</span>${o}`;
+    btn.onclick=()=>answer(i);
+    opts.appendChild(btn);
+  });
+  document.getElementById('feedbackPanel').className='feedback-panel';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('skipBtn').style.display='';
+  answered=false;
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timer); timeLeft=60;
+  document.getElementById('qTimer').textContent=timeLeft;
+  document.getElementById('qTimer').className='quiz-timer';
+  timer=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('qTimer').textContent=timeLeft;
+    document.getElementById('qTimer').className='quiz-timer'+(timeLeft<=20?' warning':'')+(timeLeft<=10?' danger':'');
+    if(timeLeft<=0){clearInterval(timer);answer(-1)}
+  },1000);
+}
+
+function answer(idx){
+  if(answered)return;
+  answered=true;
+  clearInterval(timer);
+  answers.push({q:current, correct:idx===questions[current].correct});
+  const q=questions[current];
+  const opts=document.querySelectorAll('.answer-opt');
+  opts.forEach(o=>o.classList.add('disabled'));
+  if(idx===q.correct){
+    score+=10;
+    opts[idx].classList.add('correct');
+    showFeedback(true,q.exp);
+  } else {
+    if(idx>=0)opts[idx].classList.add('wrong');
+    opts[q.correct].classList.add('correct');
+    showFeedback(false,q.exp);
+  }
+  document.getElementById('nextBtn').style.display='';
+  document.getElementById('skipBtn').style.display='none';
+}
+
+function showFeedback(correct,text){
+  const panel=document.getElementById('feedbackPanel');
+  panel.className='feedback-panel show '+(correct?'correct':'wrong');
+  document.getElementById('feedbackTitle').innerHTML=correct?'✅ Верно!':'❌ Неверно';
+  document.getElementById('feedbackText').textContent=text;
+}
+
+function nextQ(){
+  clearInterval(timer);
+  current++;
+  if(current>=questions.length){showResult();return}
+  loadQ();
+}
+
+function showResult(){
+  document.getElementById('quizHeader').style.display='none';
+  document.getElementById('quizArea').style.display='none';
+  document.getElementById('resultScreen').style.display='block';
+  const pct=score;
+  let level,icon,name;
+  if(pct<40){level=1;name='Новичок';icon='🌱'}
+  else if(pct<70){level=2;name='Осведомлённый';icon='📚'}
+  else{level=3;name='Продвинутый';icon='🛡️'}
+  document.getElementById('resIcon').textContent=icon;
+  document.getElementById('resScore').textContent=pct;
+  document.getElementById('resLevel').innerHTML=`<span class="level-icon">${icon}</span><div><strong>Уровень: ${name}</strong><br><span>${pct}% правильных ответов</span></div>`;
+  document.getElementById('resBreakdown').innerHTML=`
+    <div class="result-row"><span>Правильных ответов</span><strong style="color:var(--risk-green)">${score/10} из 10</strong></div>
+    <div class="result-row"><span>Начальный уровень</span><strong>${name}</strong></div>
+    <div class="result-row"><span>Рекомендация</span><strong>${pct<40?'Начать с основ':'Пройти все сценарии'}</strong></div>
+  `;
+  const user=JSON.parse(localStorage.getItem('sm_user')||'{}');
+  user.diagnostic=true;user.level=level;user.xp=pct*2;
+  user.diagnostic_answers=answers;
+  localStorage.setItem('sm_user',JSON.stringify(user));
+}
+
+loadQ();
+</script>
+</body>
+</html>

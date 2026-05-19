@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Сценарий: Поддельный сайт — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117;--surface:#171b26;--surface-2:#1e2333;--border:#2a2f40;
+  --accent:#00D4AA;--accent-light:rgba(0,212,170,0.1);
+  --text-1:#eef0f6;--text-2:#9ba3bb;--text-3:#5c6480;
+  --risk-red:#ff4d4d;--risk-red-bg:rgba(255,77,77,0.1);
+  --risk-green:#00c48c;--risk-green-bg:rgba(0,196,140,0.1);
+  --risk-yellow:#f5a623;--risk-yellow-bg:rgba(245,166,35,0.1);
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text-1);min-height:100vh}
+
+/* App layout */
+.app-layout{display:flex;min-height:100vh}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.app-topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);font-family:var(--font-head);font-size:1.05rem;font-weight:700}
+.page-content{flex:1;padding:28px;overflow-y:auto}
+.risk-badge{padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;font-family:var(--font-head)}
+.risk-badge.yellow{background:var(--risk-yellow-bg);color:var(--risk-yellow)}
+.risk-badge.red{background:var(--risk-red-bg);color:var(--risk-red)}
+.risk-badge.green{background:var(--risk-green-bg);color:var(--risk-green)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius);font-family:var(--font-body);font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none}
+.btn-lg{padding:14px 28px;font-size:1rem}
+.btn-primary{background:var(--accent);color:#0a0f1a}
+.btn-primary:hover{background:#00f0c0}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-1)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px}
+.widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.widget-title{font-family:var(--font-head);font-weight:800;font-size:.9rem;margin-bottom:12px;color:var(--text-1)}
+.progress-bar-outer{height:6px;background:var(--border);border-radius:99px;margin-top:4px}
+.progress-bar-inner{height:100%;background:var(--accent);border-radius:99px;transition:width .4s ease}
+
+/* Toast */
+#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:var(--radius);font-size:.88rem;font-weight:500;animation:slideIn .3s ease;max-width:340px}
+.toast.success{background:var(--risk-green-bg);border:1px solid var(--risk-green);color:var(--risk-green)}
+.toast.error{background:var(--risk-red-bg);border:1px solid var(--risk-red);color:var(--risk-red)}
+.toast.warning{background:var(--risk-yellow-bg);border:1px solid var(--risk-yellow);color:var(--risk-yellow)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* Result */
+.result-screen{max-width:600px;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:20px;align-items:center;padding:20px 0}
+.result-icon{font-size:5rem}
+.result-score{font-family:var(--font-head);font-size:4rem;font-weight:800;color:var(--accent)}
+.result-label{color:var(--text-2);font-size:1rem;margin-top:-12px}
+.result-level-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 28px;display:flex;align-items:center;gap:16px;width:100%}
+.result-breakdown{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;width:100%;display:flex;flex-direction:column;gap:10px}
+.result-row{display:flex;justify-content:space-between;font-size:.9rem;color:var(--text-2)}
+
+/* ═══ BROWSER CHROME ═══ */
+.browser-chrome{background:#1e2333;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column}
+.browser-toolbar{background:#16192a;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.browser-dots{display:flex;gap:6px}
+.browser-dot{width:11px;height:11px;border-radius:50%}
+.browser-dot.red{background:#ff5f56}
+.browser-dot.yellow{background:#ffbd2e}
+.browser-dot.green{background:#27c93f}
+.browser-url{
+  flex:1;background:#0f1117;border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;font-size:.8rem;font-family:monospace;color:var(--text-2);
+  display:flex;align-items:center;gap:6px;position:relative;cursor:pointer;
+}
+.browser-url .lock-icon{font-size:.9rem}
+.url-text{flex:1}
+.browser-frame{flex:1;overflow:hidden;position:relative}
+
+/* ═══ FAKE BANK SITE ═══ */
+.fake-site{
+  background:#f0f4f8;color:#1a1a2e;font-family:'DM Sans',sans-serif;
+  min-height:500px;position:relative;user-select:none;
+}
+
+/* Hotspot — кликабельный элемент с признаком */
+.hotspot{
+  position:relative;cursor:pointer;transition:all .2s;
+  border-radius:3px;
+}
+.hotspot::after{
+  content:'';position:absolute;inset:-2px;border-radius:5px;
+  border:2px dashed transparent;transition:all .2s;pointer-events:none;
+}
+.hotspot:not(.found):not(.missed):hover::after{
+  border-color:rgba(255,200,0,0.7);
+  background:rgba(255,200,0,0.07);
+}
+.hotspot.found{outline:2px solid var(--risk-green);outline-offset:2px;position:relative}
+.hotspot.found::before{
+  content:'✓';position:absolute;top:-10px;right:-10px;width:20px;height:20px;
+  background:var(--risk-green);color:#fff;border-radius:50%;font-size:.65rem;
+  display:flex;align-items:center;justify-content:center;z-index:10;font-weight:700;
+  line-height:20px;text-align:center;
+}
+.hotspot.missed{outline:2px solid var(--risk-red);outline-offset:2px}
+
+/* Fake bank header */
+.fb-header{
+  background:linear-gradient(90deg,#003087 0%,#0055d4 100%);
+  padding:0;
+}
+.fb-nav{
+  display:flex;align-items:center;padding:12px 32px;gap:24px;
+}
+.fb-logo{display:flex;align-items:center;gap:8px;color:#fff;font-weight:800;font-size:1.1rem}
+.fb-logo-icon{width:32px;height:32px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#003087;font-weight:900;font-size:.9rem}
+.fb-nav-links{display:flex;gap:20px;margin-left:auto}
+.fb-nav-links a{color:rgba(255,255,255,0.85);text-decoration:none;font-size:.85rem;cursor:default}
+.fb-nav-btn{background:#00c4ff;color:#003087;padding:7px 18px;border-radius:6px;font-weight:700;font-size:.82rem;cursor:pointer;border:none}
+.fb-hero{
+  background:linear-gradient(135deg,#002575 0%,#0044bb 60%,#0088ff 100%);
+  padding:36px 32px 32px;color:#fff;
+}
+.fb-hero h1{font-size:1.6rem;font-weight:800;margin-bottom:8px}
+.fb-hero p{font-size:.9rem;opacity:.85;margin-bottom:24px}
+.fb-login-card{
+  background:#fff;border-radius:12px;padding:24px;max-width:320px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+}
+.fb-login-card h3{color:#1a1a2e;font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.fb-input{width:100%;border:1.5px solid #d0d9e8;border-radius:8px;padding:10px 14px;font-size:.88rem;margin-bottom:12px;font-family:inherit;color:#1a1a2e;outline:none}
+.fb-input:focus{border-color:#0055d4}
+.fb-login-btn{width:100%;background:#0055d4;color:#fff;border:none;border-radius:8px;padding:12px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit}
+.fb-footer-bar{background:#1a1a2e;padding:10px 32px;display:flex;align-items:center;justify-content:space-between;font-size:.73rem;color:#888}
+.fb-footer-links{display:flex;gap:16px}
+.fb-footer-links a{color:#888;text-decoration:none}
+.fb-body{padding:28px 32px;background:#f0f4f8}
+.fb-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.fb-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.fb-card-icon{font-size:1.5rem;margin-bottom:8px}
+.fb-card-title{font-weight:700;font-size:.88rem;color:#1a1a2e;margin-bottom:4px}
+.fb-card-desc{font-size:.78rem;color:#666}
+.fb-trust{display:flex;align-items:center;gap:8px;font-size:.75rem;color:#666;margin-top:6px}
+.fb-section-title{font-size:1rem;font-weight:700;color:#1a1a2e;margin-bottom:12px}
+.fb-news{display:flex;flex-direction:column;gap:8px}
+.fb-news-item{background:#fff;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:.82rem;color:#1a1a2e}
+.fb-news-date{font-size:.72rem;color:#999;margin-top:2px}
+
+/* Glitch elements for hotspots */
+.typo-error{color:inherit} /* subtle, only detected on click */
+
+/* Overlay for revealed answer */
+.hotspot-popup{
+  position:fixed;left:50%;bottom:80px;transform:translateX(-50%);
+  background:#1e2333;border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:16px 22px;max-width:400px;width:90%;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:popUp .25s ease;
+}
+@keyframes popUp{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.hotspot-popup-title{font-weight:700;font-size:.95rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.hotspot-popup-desc{font-size:.85rem;color:var(--text-2);line-height:1.6}
+.hotspot-popup-close{position:absolute;top:12px;right:14px;cursor:pointer;color:var(--text-3);font-size:1.1rem;line-height:1}
+
+/* Hint glow */
+.hint-glow .hotspot:not(.found){animation:hintPulse 1.5s ease-in-out 3}
+@keyframes hintPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,200,0,0)}50%{box-shadow:0 0 0 4px rgba(255,200,0,0.4)}}
+
+/* Side panel */
+.scenario-layout{display:grid;grid-template-columns:1fr 270px;gap:20px}
+.scenario-sidebar-panel{display:flex;flex-direction:column;gap:14px}
+.found-item{display:flex;align-items:flex-start;gap:8px;font-size:.82rem;padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-2);line-height:1.4}
+.found-item:last-child{border-bottom:none}
+.found-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;margin-top:1px}
+.found-dot.found{background:var(--risk-green);color:#fff}
+.found-dot.empty{background:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <main class="main-content">
+    <div class="app-topbar">
+      <div>🌐 Поддельный сайт</div>
+      <span class="risk-badge yellow">Средне</span>
+      <div style="margin-left:auto;font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:var(--accent)" id="liveScore">0 / 500</div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- INTRO -->
+      <div id="introScreen" class="card" style="max-width:680px;margin:0 auto;text-align:center;padding:48px 40px">
+        <div style="font-size:4rem;margin-bottom:16px">🌐</div>
+        <h2 style="font-family:var(--font-head);font-size:1.8rem;margin-bottom:12px">Поддельный сайт</h2>
+        <p style="color:var(--text-2);margin-bottom:28px;line-height:1.7">
+          Перед тобой — точная копия банковского сайта KaspiBank. Но это подделка!<br><br>
+          Найди все скрытые признаки того, что сайт ненастоящий. <strong style="color:var(--accent)">Кликай на подозрительные элементы</strong>, чтобы их отметить. Нужно найти не менее 8 из 10.
+        </p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⏱ ~12 минут</strong><br><span style="color:var(--text-3)">Примерное время</span></div>
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⭐ 500 очков</strong><br><span style="color:var(--text-3)">Максимум</span></div>
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>🔍 10 признаков</strong><br><span style="color:var(--text-3)">Нужно найти 8+</span></div>
+        </div>
+        <div style="background:rgba(99,135,255,0.1);border:1px solid rgba(99,135,255,0.3);border-radius:var(--radius);padding:14px 18px;text-align:left;margin-bottom:24px;font-size:.85rem;color:#8faff5;line-height:1.6">
+          💡 <strong>Как играть:</strong> Внимательно осмотри весь сайт. Кликни на всё, что кажется подозрительным. За каждый найденный признак — 50 очков. Используй подсказку если застрял.
+        </div>
+        <button onclick="startScenario()" class="btn btn-primary btn-lg">Начать осмотр →</button>
+      </div>
+
+      <!-- SCENARIO -->
+      <div id="scenarioScreen" style="display:none">
+        <div class="scenario-layout">
+          <div>
+            <!-- Browser chrome -->
+            <div class="browser-chrome" style="margin-bottom:16px">
+              <div class="browser-toolbar">
+                <div class="browser-dots">
+                  <div class="browser-dot red"></div>
+                  <div class="browser-dot yellow"></div>
+                  <div class="browser-dot green"></div>
+                </div>
+                <!-- Hotspot 1: Suspicious URL -->
+                <div class="browser-url hotspot" id="hs-url" onclick="foundIt('url')" title="Кликни на адресную строку">
+                  <span class="lock-icon" id="urlLock">⚠️</span>
+                  <span class="url-text" id="urlText">http://kaspi-bank-online.kz.secure-login.ru/personal</span>
+                  <span style="font-size:.7rem;color:var(--risk-yellow)">Небезопасно</span>
+                </div>
+                <span style="font-size:1rem;cursor:pointer;color:var(--text-3)" title="Обновить">↻</span>
+              </div>
+
+              <!-- FAKE SITE CONTENT -->
+              <div class="browser-frame">
+                <div class="fake-site" id="fakeSite">
+
+                  <!-- Header -->
+                  <div class="fb-header">
+                    <div class="fb-nav">
+                      <!-- Hotspot 2: Logo typo -->
+                      <div class="fb-logo hotspot" id="hs-logo" onclick="foundIt('logo')">
+                        <div class="fb-logo-icon">KB</div>
+                        <span>KaspiiBankk</span>
+                      </div>
+                      <div class="fb-nav-links">
+                        <a>Частным</a>
+                        <a>Бизнесу</a>
+                        <!-- Hotspot 3: Suspicious nav link -->
+                        <a class="hotspot" id="hs-navlink" onclick="foundIt('navlink')" style="cursor:pointer;background:rgba(255,50,50,0.2);padding:2px 6px;border-radius:4px">Получить бонус!</a>
+                        <a>О банке</a>
+                      </div>
+                      <button class="fb-nav-btn" style="margin-left:16px">Войти</button>
+                    </div>
+
+                    <!-- Hero with login form -->
+                    <div class="fb-hero">
+                      <div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start">
+                        <div>
+                          <h1>Добро пожаловать в KaspiBank</h1>
+                          <p>Управляйте своими финансами онлайн — быстро, удобно и безопасно</p>
+                          <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;font-size:.78rem">✅ 24/7 поддержка</div>
+                            <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;font-size:.78rem">🔒 Защита данных</div>
+                          </div>
+                        </div>
+                        <!-- Login card -->
+                        <div class="fb-login-card">
+                          <h3>🔐 Вход в личный кабинет</h3>
+                          <input class="fb-input" type="text" placeholder="Номер телефона" readonly>
+                          <input class="fb-input" type="password" placeholder="Пароль" readonly>
+                          <!-- Hotspot 4: "Forgot password" with suspicious link -->
+                          <div class="hotspot" id="hs-forgotpw" onclick="foundIt('forgotpw')" style="font-size:.75rem;color:#0055d4;margin-bottom:12px;cursor:pointer;text-decoration:underline">
+                            Забыли пароль? Восстановить через SMS → secure-restore.ru
+                          </div>
+                          <button class="fb-login-btn">Войти</button>
+                          <!-- Hotspot 5: Data collection checkbox -->
+                          <div class="hotspot" id="hs-checkbox" onclick="foundIt('checkbox')" style="margin-top:12px;font-size:.7rem;color:#666;cursor:pointer;display:flex;align-items:flex-start;gap:6px">
+                            <input type="checkbox" checked readonly style="margin-top:2px;flex-shrink:0">
+                            <span>Я соглашаюсь передавать мои данные третьим лицам для улучшения сервиса</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Body -->
+                  <div class="fb-body">
+                    <div class="fb-cards">
+                      <div class="fb-card">
+                        <div class="fb-card-icon">💳</div>
+                        <div class="fb-card-title">Карты и счета</div>
+                        <div class="fb-card-desc">Управление картами онлайн</div>
+                      </div>
+                      <!-- Hotspot 6: Too-good offer -->
+                      <div class="fb-card hotspot" id="hs-offer" onclick="foundIt('offer')" style="cursor:pointer;border:2px solid #ff6b6b">
+                        <div class="fb-card-icon">🎁</div>
+                        <div class="fb-card-title" style="color:#cc0000">АКЦИЯ! 50 000₸ бонус</div>
+                        <div class="fb-card-desc" style="color:#cc0000">Введи данные карты и получи прямо сейчас!</div>
+                      </div>
+                      <div class="fb-card">
+                        <div class="fb-card-icon">📱</div>
+                        <div class="fb-card-title">Мобильный банк</div>
+                        <div class="fb-card-desc">Скачай приложение</div>
+                      </div>
+                    </div>
+
+                    <!-- Trust section — hotspot 7: fake certificate -->
+                    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+                      <div class="hotspot" id="hs-cert" onclick="foundIt('cert')" style="cursor:pointer;background:#fff;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:.78rem;color:#444;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+                        <span style="font-size:1.2rem">🏆</span>
+                        <div>
+                          <div style="font-weight:700">Сертификат безопасности</div>
+                          <div style="color:#999;font-size:.7rem">SSL by FreeSSL.org — истёк 2023</div>
+                        </div>
+                      </div>
+                      <div style="background:#fff;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:.78rem;color:#444;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+                        <span style="font-size:1.2rem">📞</span>
+                        <div>
+                          <div style="font-weight:700">Поддержка 24/7</div>
+                          <!-- Hotspot 8: wrong phone -->
+                          <div class="hotspot" id="hs-phone" onclick="foundIt('phone')" style="cursor:pointer;color:#0055d4;text-decoration:underline">
+                            +7 (495) 000-00-00 (Москва)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- News -->
+                    <div class="fb-section-title">Новости банка</div>
+                    <div class="fb-news">
+                      <div class="fb-news-item">
+                        <span style="font-size:1.5rem">📰</span>
+                        <div>
+                          <div>KaspiBank запускает новую программу лояльности для клиентов</div>
+                          <div class="fb-news-date">15 февраля 2024</div>
+                        </div>
+                      </div>
+                      <!-- Hotspot 9: Old date / inconsistency -->
+                      <div class="fb-news-item hotspot" id="hs-date" onclick="foundIt('date')" style="cursor:pointer">
+                        <span style="font-size:1.5rem">📅</span>
+                        <div>
+                          <div>Обновление условий обслуживания карт</div>
+                          <div class="fb-news-date" style="color:var(--risk-red)">3 марта 2019 года — Последнее обновление сайта</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Footer -->
+                  <div class="fb-footer-bar">
+                    <!-- Hotspot 10: Wrong copyright / address -->
+                    <div class="hotspot" id="hs-footer" onclick="foundIt('footer')" style="cursor:pointer">
+                      © 2019 KaspiBank LLC. Все права защищены. Адрес: г. Москва, ул. Тверская, 15
+                    </div>
+                    <div class="fb-footer-links">
+                      <a>Политика</a>
+                      <a>Помощь</a>
+                      <a>Контакты</a>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div><!-- /browser chrome -->
+
+            <!-- Bottom controls -->
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button onclick="useHint()" class="btn btn-outline" id="hintBtn">💡 Подсказка (-30 очков)</button>
+              <button onclick="finishEarly()" class="btn btn-outline" style="margin-left:auto" id="finishBtn">Завершить осмотр →</button>
+              <div style="font-size:.85rem;color:var(--text-2)" id="foundCounter">Найдено: 0 / 10</div>
+            </div>
+          </div>
+
+          <!-- Sidebar panel -->
+          <div class="scenario-sidebar-panel">
+            <div class="widget">
+              <div class="widget-title">Прогресс</div>
+              <div style="text-align:center;margin-bottom:8px">
+                <div style="font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--accent)" id="sideScore">0</div>
+                <div style="font-size:.8rem;color:var(--text-3)">очков из 500</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--text-2);margin-bottom:6px" id="progressLabel">Найдено: 0 из 10</div>
+              <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+              <div style="margin-top:12px;font-size:.78rem;color:var(--text-3)">Нужно найти минимум 8</div>
+            </div>
+
+            <div class="widget">
+              <div class="widget-title">Что искать</div>
+              <div style="font-size:.81rem;color:var(--text-2);line-height:1.9">
+                🔴 Поддельный домен/URL<br>
+                🔴 Опечатки в названии<br>
+                🔴 Подозрительные ссылки<br>
+                🟡 Слишком выгодные акции<br>
+                🟡 Устаревшие/неверные данные<br>
+                🟡 Передача данных 3-м лицам<br>
+                🔴 Истёкший сертификат<br>
+                🟡 Неверные контакты<br>
+              </div>
+            </div>
+
+            <div class="widget" id="foundListWidget">
+              <div class="widget-title">Найденные признаки</div>
+              <div id="foundList">
+                <div style="font-size:.8rem;color:var(--text-3)">Кликай на подозрительные элементы...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div id="resultScreen" style="display:none">
+        <div class="result-screen">
+          <div class="result-icon" id="resIcon"></div>
+          <div class="result-score" id="resScore"></div>
+          <div class="result-label">из 500 очков</div>
+          <div class="result-level-card" id="resLevelCard"></div>
+          <div class="result-breakdown" id="resBreakdown"></div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="scenarios.html" class="btn btn-outline btn-lg">← Все сценарии</a>
+            <a href="dashboard.html" class="btn btn-primary btn-lg">На главную →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Popup overlay -->
+<div id="hotspotPopup" style="display:none" class="hotspot-popup">
+  <div id="popupTitle" class="hotspot-popup-title"></div>
+  <div id="popupDesc" class="hotspot-popup-desc"></div>
+  <span class="hotspot-popup-close" onclick="closePopup()">✕</span>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const HOTSPOTS = {
+  url: {
+    title: '🔴 Поддельный домен (URL)',
+    desc: 'Адрес сайта: http://kaspi-bank-online.kz.secure-login.ru — это не kaspi.kz! Настоящий домен идёт после последней точки перед /. Здесь это secure-login.ru — российский домен. Плюс нет HTTPS!',
+    pts: 50
+  },
+  logo: {
+    title: '🔴 Опечатка в логотипе',
+    desc: '"KaspiiBankk" — двойные буквы в названии. Мошенники часто делают едва заметные опечатки в названии бренда, чтобы зарегистрировать похожий домен.',
+    pts: 50
+  },
+  navlink: {
+    title: '🟡 Подозрительная ссылка в меню',
+    desc: '«Получить бонус!» в навигации банка — нетипично и подозрительно. Официальные банки не размещают кричащие призывы в основной навигации.',
+    pts: 50
+  },
+  forgotpw: {
+    title: '🔴 Восстановление на чужом домене',
+    desc: 'Ссылка "Восстановить через SMS → secure-restore.ru" ведёт на другой сайт, не связанный с банком. Это явный признак кражи учётных данных.',
+    pts: 50
+  },
+  checkbox: {
+    title: '🔴 Передача данных третьим лицам',
+    desc: 'Чекбокс уже стоит и соглашается на передачу данных третьим лицам. Настоящие банки никогда не передают данные клиентов посторонним организациям без явного согласия.',
+    pts: 50
+  },
+  offer: {
+    title: '🟡 Слишком выгодное предложение',
+    desc: '"50 000₸ бонус — введи данные карты прямо сейчас!" — классическая приманка. Настоящие банки никогда не требуют данные карты для получения бонуса прямо на главной.',
+    pts: 50
+  },
+  cert: {
+    title: '🔴 Истёкший SSL-сертификат',
+    desc: 'SSL-сертификат от FreeSSL.org истёк в 2023 году. Серьёзные банки используют сертификаты от доверенных центров (DigiCert, GlobalSign) и следят за их актуальностью.',
+    pts: 50
+  },
+  phone: {
+    title: '🟡 Неверный телефон поддержки',
+    desc: 'Номер +7 (495) — московский. Казахстанский KaspiBank использует казахстанские номера (+7 727... или 8 800...). Российский номер у казахстанского банка — явная несостыковка.',
+    pts: 50
+  },
+  date: {
+    title: '🟡 Устаревшая дата обновления',
+    desc: '"Последнее обновление сайта: 3 марта 2019 года" — сайт не обновлялся 5+ лет? Легитимные банковские сайты обновляются постоянно. Это признак быстро сделанной подделки.',
+    pts: 50
+  },
+  footer: {
+    title: '🔴 Неверный юридический адрес',
+    desc: '© 2019 KaspiBank LLC, г. Москва, ул. Тверская — KaspiBank зарегистрирован в Алматы, Казахстан, а не в Москве. Московский адрес и год 2019 — явные признаки подделки.',
+    pts: 50
+  }
+};
+
+let score = 0;
+let found = new Set();
+let hintsUsed = 0;
+let finished = false;
+
+function startScenario() {
+  document.getElementById('introScreen').style.display = 'none';
+  document.getElementById('scenarioScreen').style.display = 'block';
+}
+
+function foundIt(id) {
+  if (found.has(id)) {
+    // Already found — show popup again
+    showPopup(id);
+    return;
+  }
+  const h = HOTSPOTS[id];
+  found.add(id);
+  score += h.pts;
+
+  document.getElementById('liveScore').textContent = score + ' / 500';
+  document.getElementById('sideScore').textContent = score;
+
+  // Mark hotspot
+  const el = document.getElementById('hs-' + id);
+  if (el) el.classList.add('found');
+
+  showPopup(id);
+  showToast('🔍 Признак найден! +' + h.pts + ' очков', 'success');
+  updateProgress();
+
+  if (found.size === 10) {
+    setTimeout(() => showResult(true), 800);
+  }
+}
+
+function showPopup(id) {
+  const h = HOTSPOTS[id];
+  const pop = document.getElementById('hotspotPopup');
+  document.getElementById('popupTitle').innerHTML = h.title;
+  document.getElementById('popupDesc').textContent = h.desc;
+  pop.style.display = 'block';
+  setTimeout(() => closePopup(), 7000);
+}
+
+function closePopup() {
+  document.getElementById('hotspotPopup').style.display = 'none';
+}
+
+function updateProgress() {
+  const n = found.size;
+  document.getElementById('progressLabel').textContent = `Найдено: ${n} из 10`;
+  document.getElementById('foundCounter').textContent = `Найдено: ${n} / 10`;
+  document.getElementById('progressBar').style.width = (n / 10 * 100) + '%';
+
+  // Update found list
+  const list = document.getElementById('foundList');
+  if (n === 0) {
+    list.innerHTML = '<div style="font-size:.8rem;color:var(--text-3)">Кликай на подозрительные элементы...</div>';
+    return;
+  }
+  list.innerHTML = Array.from(found).map(id => {
+    const h = HOTSPOTS[id];
+    return `<div class="found-item">
+      <div class="found-dot found">✓</div>
+      <span>${h.title.replace(/^[🔴🟡🟢]\s/,'')}</span>
+    </div>`;
+  }).join('');
+}
+
+function useHint() {
+  if (finished) return;
+  score = Math.max(0, score - 30);
+  hintsUsed++;
+  document.getElementById('liveScore').textContent = score + ' / 500';
+  document.getElementById('sideScore').textContent = score;
+  showToast('💡 Подсказка: ищи ошибки в тексте, URL, контактах и предложениях (-30 очков)', 'warning');
+
+  // Briefly highlight unfound hotspots
+  document.getElementById('fakeSite').classList.add('hint-glow');
+  setTimeout(() => document.getElementById('fakeSite').classList.remove('hint-glow'), 5000);
+
+  if (hintsUsed >= 3) {
+    document.getElementById('hintBtn').disabled = true;
+    document.getElementById('hintBtn').style.opacity = '0.4';
+  }
+}
+
+function finishEarly() {
+  showResult(false);
+}
+
+function showResult(allFound) {
+  finished = true;
+  closePopup();
+
+  // Highlight all missed hotspots
+  Object.keys(HOTSPOTS).forEach(id => {
+    if (!found.has(id)) {
+      const el = document.getElementById('hs-' + id);
+      if (el) el.classList.add('missed');
+    }
+  });
+
+  setTimeout(() => {
+    document.getElementById('scenarioScreen').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'block';
+
+    const n = found.size;
+    const pct = Math.round(score / 500 * 100);
+    document.getElementById('resIcon').textContent = n >= 9 ? '🏆' : n >= 7 ? '🔍' : '📚';
+    document.getElementById('resScore').textContent = score;
+
+    const levels = [
+      { min: 9, icon: '🛡️', label: 'Детектив безопасности!', desc: 'Ты нашёл почти все признаки подделки. Отличная наблюдательность!' },
+      { min: 7, icon: '🔍', label: 'Хороший результат', desc: 'Ты нашёл большинство признаков. Немного практики — и будешь экспертом!' },
+      { min: 0, icon: '📖', label: 'Нужно больше практики', desc: 'Мошенники рассчитывают на невнимательность. Изучи пропущенные признаки!' }
+    ];
+    const lv = levels.find(l => n >= l.min);
+    document.getElementById('resLevelCard').innerHTML = `
+      <span style="font-size:2rem">${lv.icon}</span>
+      <div><strong style="font-size:1.05rem">${lv.label}</strong><br><span style="color:var(--text-2);font-size:.88rem">${lv.desc}</span></div>
+    `;
+    document.getElementById('resBreakdown').innerHTML = `
+      <div class="result-row"><span>Найдено признаков</span><strong style="color:var(--risk-green)">${n} из 10</strong></div>
+      <div class="result-row"><span>Пропущено</span><strong style="color:var(--risk-red)">${10 - n}</strong></div>
+      <div class="result-row"><span>Подсказок использовано</span><strong>${hintsUsed}</strong></div>
+      <div class="result-row"><span>Итоговый счёт</span><strong>${score} / 500</strong></div>
+    `;
+
+    try {
+      const user = JSON.parse(localStorage.getItem('sm_user') || '{}');
+      if (!user.scenarios) user.scenarios = {};
+      user.scenarios.fake_site = { done: true, score: pct };
+      user.xp = (user.xp || 0) + Math.round(score / 10);
+      localStorage.setItem('sm_user', JSON.stringify(user));
+    } catch(e) {}
+  }, allFound ? 400 : 0);
+}
+
+function showToast(msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = msg;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

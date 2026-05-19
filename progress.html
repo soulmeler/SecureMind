@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Прогресс — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css"><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="components.css"><link rel="stylesheet" href="app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body class="app-page">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div><span class="logo-text">SecureMind</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">🏠</span> Главная</a>
+      <a href="scenarios.html" class="sidebar-nav-item"><span class="nav-icon">🎮</span> Сценарии</a>
+      <a href="progress.html" class="sidebar-nav-item active"><span class="nav-icon">📊</span> Прогресс</a>
+      <a href="achievements.html" class="sidebar-nav-item"><span class="nav-icon">🏆</span> Достижения</a>
+      <div class="sidebar-section">Аккаунт</div>
+      <a href="index.html" class="sidebar-nav-item"><span class="nav-icon">🚪</span> Выйти</a>
+    </nav>
+  </aside>
+  <main class="main-content">
+    <div class="app-topbar"><div class="app-topbar-title">Аналитика прогресса</div></div>
+    <div class="page-content">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-card-icon" style="background:var(--accent-light)">⭐</div><div class="stat-card-body"><strong id="statXP">0</strong><span>Всего XP</span></div></div>
+        <div class="stat-card"><div class="stat-card-icon" style="background:var(--risk-green-bg)">✅</div><div class="stat-card-body"><strong id="statDone">0/6</strong><span>Сценариев пройдено</span></div></div>
+        <div class="stat-card"><div class="stat-card-icon" style="background:var(--risk-yellow-bg)">🔥</div><div class="stat-card-body"><strong id="statStreak">0</strong><span>Дней стрик</span></div></div>
+        <div class="stat-card"><div class="stat-card-icon" style="background:var(--risk-blue-bg)">📊</div><div class="stat-card-body"><strong id="statAvg">0%</strong><span>Средний балл</span></div></div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="col-6">
+          <div class="widget">
+            <div class="widget-title">Компетенции по типам угроз</div>
+            <div class="radar-container"><canvas id="radarChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="widget">
+            <div class="widget-title">Баллы за последние сессии</div>
+            <div class="chart-container"><canvas id="lineChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="widget">
+            <div class="widget-title">Результаты по сценариям</div>
+            <table class="data-table">
+              <thead><tr><th>Сценарий</th><th>Лучший результат</th><th>Попыток</th><th>Статус</th><th>Действие</th></tr></thead>
+              <tbody id="scenTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="widget">
+            <div class="widget-title">Активность (последние 12 недель)</div>
+            <div class="heatmap" id="heatmap" style="grid-template-columns:repeat(21,1fr)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const user=JSON.parse(localStorage.getItem('sm_user')||'{}');
+// Список сценариев в одном месте — используем и для карточек, и для таблицы
+const scens=[{id:'phishing',icon:'📧',name:'Фишинговое письмо',url:'scenario-phishing.html'},{id:'social',icon:'💬',name:'Соц. инженерия',url:'scenario-social.html'},{id:'fake',icon:'🌐',name:'Поддельный сайт',url:'scenario-fake.html'},{id:'qr',icon:'📲',name:'QR-мошенничество',url:'scenario-qr.html'},{id:'password',icon:'🔑',name:'Пароли',url:'scenario-password.html'},{id:'malware',icon:'💀',name:'Вредонос',url:'scenario-malware.html'}];
+
+document.getElementById('statXP').textContent=user.xp||0;
+document.getElementById('statStreak').textContent=user.streak||0;
+
+const allIds=scens.map(s=>s.id);
+const doneList=allIds
+  .map(id=>(user.scenarios||{})[id])
+  .filter(s=>s && s.done);
+document.getElementById('statDone').textContent=doneList.length+'/'+allIds.length;
+
+const avg=doneList.length
+  ? Math.round(doneList.reduce((a,s)=>a+(s.score||0),0)/doneList.length)
+  : 0;
+document.getElementById('statAvg').textContent=avg+'%';
+
+// Radar
+new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['Фишинг','Соц. инженерия','Фейк-сайты','QR-коды','Пароли','Вредонос'],datasets:[{label:'Ваш уровень',data:[user.scenarios?.phishing?.score||10,user.scenarios?.social?.score||20,user.scenarios?.fake?.score||35,15,user.scenarios?.password?.score||40,10],fill:true,backgroundColor:'rgba(0,212,170,0.15)',borderColor:'#00D4AA',pointBackgroundColor:'#00D4AA'}]},options:{scales:{r:{beginAtZero:true,max:100,ticks:{display:false},grid:{color:'rgba(0,0,0,0.06)'}}},plugins:{legend:{display:false}}}});
+
+// Line
+new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:['Сес.1','Сес.2','Сес.3','Сес.4','Сес.5','Сес.6'],datasets:[{label:'Баллы',data:[45,62,58,74,81,avg||70],fill:true,backgroundColor:'rgba(0,212,170,0.1)',borderColor:'#00D4AA',tension:0.4,pointBackgroundColor:'#00D4AA'}]},options:{scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(0,0,0,0.05)'}}},plugins:{legend:{display:false}}}});
+
+// Table
+const tbody=document.getElementById('scenTable');
+scens.forEach(s=>{
+  const d=user.scenarios?.[s.id];
+  tbody.innerHTML+=`<tr>
+    <td>${s.icon} ${s.name}</td>
+    <td>${d?`<strong style="color:var(--risk-green)">${d.score}%</strong>`:'—'}</td>
+    <td>${d?1:0}</td>
+    <td>${d?'<span class="scenario-status status-done">Пройдено</span>':'<span class="scenario-status status-new">Не пройдено</span>'}</td>
+    <td><a href="${s.url}" class="btn btn-sm ${d?'btn-outline':'btn-primary'}">${d?'Повтор':'Начать'}</a></td>
+  </tr>`;
+});
+
+// Heatmap
+const hm=document.getElementById('heatmap');
+for(let i=0;i<147;i++){const c=document.createElement('div');const r=Math.random();c.className='heatmap-cell'+(r>.85?' l4':r>.7?' l3':r>.5?' l2':r>.3?' l1':'');hm.appendChild(c)}
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Панель учителя — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#171b26;--surface-2:#1e2333;--border:#2a2f40;
+  --accent:#00D4AA;--accent-light:rgba(0,212,170,0.1);
+  --text-1:#eef0f6;--text-2:#9ba3bb;--text-3:#5c6480;
+  --risk-red:#ff4d4d;--risk-red-bg:rgba(255,77,77,0.1);
+  --risk-green:#00c48c;--risk-green-bg:rgba(0,196,140,0.1);
+  --risk-yellow:#f5a623;--risk-yellow-bg:rgba(245,166,35,0.1);
+  --risk-blue:#3b82f6;--risk-blue-bg:rgba(59,130,246,0.1);
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text-1);min-height:100vh;overflow-x:hidden}
+
+/* ── LAYOUT ── */
+.app-layout{display:flex;min-height:100vh}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:36px;padding:0 8px}
+.logo-icon{width:32px;height:32px;background:var(--accent-light);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-text{font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:var(--text-1)}
+.sidebar-nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);
+  color:var(--text-2);text-decoration:none;font-size:.9rem;font-weight:500;
+  cursor:pointer;border:none;background:transparent;width:100%;text-align:left;
+  transition:all .18s;
+}
+.nav-item:hover{background:var(--surface-2);color:var(--text-1)}
+.nav-item.active{background:var(--accent-light);color:var(--accent)}
+.nav-icon{font-size:1rem;width:20px;text-align:center}
+.sidebar-section{font-size:.7rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;padding:16px 12px 4px}
+.sidebar-bottom{margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:8px}
+.sidebar-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#0a0f1a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;flex-shrink:0}
+.sidebar-user-info{display:flex;flex-direction:column}
+.sidebar-user-info strong{font-size:.88rem;color:var(--text-1)}
+.sidebar-user-info span{font-size:.75rem;color:var(--text-3)}
+
+/* ── TOPBAR ── */
+.app-topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface)}
+.app-topbar-title{font-family:var(--font-head);font-size:1.05rem;font-weight:800;flex:1}
+
+/* ── PAGE ── */
+.page-content{flex:1;padding:28px;overflow-y:auto}
+.page-section{display:none}
+.page-section.active{display:block}
+
+/* ── TABS (top) ── */
+.top-tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.tab-btn{
+  padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--text-2);font-family:var(--font-body);font-size:.9rem;font-weight:600;
+  cursor:pointer;margin-bottom:-1px;transition:all .18s;
+}
+.tab-btn:hover{color:var(--text-1)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;display:flex;align-items:center;gap:14px}
+.stat-card-icon{width:44px;height:44px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-card-body{flex:1}
+.stat-card-body strong{display:block;font-family:var(--font-head);font-size:1.7rem;font-weight:800;line-height:1.1}
+.stat-card-body span{font-size:.78rem;color:var(--text-3)}
+.stat-trend{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:20px}
+.stat-trend.up{background:var(--risk-green-bg);color:var(--risk-green)}
+.stat-trend.down{background:var(--risk-red-bg);color:var(--risk-red)}
+
+.widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;margin-bottom:16px}
+.widget-title{font-family:var(--font-head);font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);margin-bottom:16px}
+
+.dashboard-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.col-4{grid-column:span 4}
+.col-8{grid-column:span 8}
+.col-12{grid-column:span 12}
+.chart-container{height:280px;position:relative}
+
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.data-table th{text-align:left;padding:10px 12px;color:var(--text-3);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.data-table td{padding:12px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--surface-2)}
+.student-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0}
+.student-name{font-weight:600;font-size:.88rem}
+.student-meta{font-size:.75rem;color:var(--text-3)}
+
+/* ── RISK BADGE ── */
+.risk-badge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;display:inline-block}
+.risk-badge.green{background:var(--risk-green-bg);color:var(--risk-green)}
+.risk-badge.yellow{background:var(--risk-yellow-bg);color:var(--risk-yellow)}
+.risk-badge.red{background:var(--risk-red-bg);color:var(--risk-red)}
+.risk-badge.blue{background:var(--risk-blue-bg);color:var(--risk-blue)}
+
+/* ── BTN ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius);font-family:var(--font-body);font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#0a0f1a}
+.btn-primary:hover{background:#00f0c0}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-1)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:7px 14px;font-size:.82rem}
+.btn-danger{background:var(--risk-red-bg);border:1.5px solid var(--risk-red);color:var(--risk-red)}
+.btn-danger:hover{background:var(--risk-red);color:#fff}
+.btn-full{width:100%;justify-content:center}
+
+/* ── CLASS CARD ── */
+.teacher-class-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:16px;cursor:pointer;transition:all .18s;margin-bottom:12px;
+}
+.teacher-class-card:hover{border-color:var(--accent);background:var(--accent-light)}
+.class-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.class-icon{width:36px;height:36px;background:var(--accent-light);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.class-card-name{font-weight:700;font-size:.95rem}
+.class-card-meta{font-size:.75rem;color:var(--text-3)}
+.class-stats{display:flex;justify-content:space-between}
+.class-stat-item{text-align:center}
+.class-stat-item strong{display:block;font-family:var(--font-head);font-size:1.1rem;font-weight:800}
+.class-stat-item span{font-size:.72rem;color:var(--text-3)}
+
+/* ── STUDENT ROW ── */
+.student-row{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:var(--radius);cursor:pointer;transition:background .15s;margin-bottom:4px}
+.student-row:hover{background:var(--surface-2)}
+.student-row.selected{background:var(--accent-light);border:1px solid var(--accent)}
+.student-info{flex:1}
+
+/* ── FORM ── */
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:.82rem;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.form-input{width:100%;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:.9rem;font-family:var(--font-body);color:var(--text-1);outline:none;transition:border-color .18s}
+.form-input:focus{border-color:var(--accent)}
+.form-select{appearance:none;cursor:pointer}
+textarea.form-input{resize:vertical}
+.checkbox-group{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius);border:1.5px solid var(--border);cursor:pointer;font-size:.88rem;margin-bottom:6px;transition:all .15s}
+.checkbox-group:hover{border-color:var(--accent);background:var(--accent-light)}
+.checkbox-group input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;max-width:480px;width:90%;position:relative;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal h2{font-family:var(--font-head);font-size:1.4rem;margin-bottom:6px}
+.modal p{color:var(--text-2);margin-bottom:20px;font-size:.9rem}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-3);font-size:1.5rem;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--text-1)}
+
+/* ── TOAST ── */
+#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:var(--radius);font-size:.88rem;font-weight:500;animation:slideIn .3s ease;background:var(--risk-green-bg);border:1px solid var(--risk-green);color:var(--risk-green)}
+.toast.error{background:var(--risk-red-bg);border-color:var(--risk-red);color:var(--risk-red)}
+.toast.warning{background:var(--risk-yellow-bg);border-color:var(--risk-yellow);color:var(--risk-yellow)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.prog-bar-inner{height:100%;border-radius:99px;background:var(--accent);transition:width .4s ease}
+
+/* ── REPORTS ── */
+.report-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.report-icon{width:44px;height:44px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.report-info{flex:1}
+.report-title{font-weight:700;font-size:.92rem;margin-bottom:2px}
+.report-desc{font-size:.78rem;color:var(--text-3)}
+
+/* ── ALERT ── */
+.alert{padding:14px 18px;border-radius:var(--radius);font-size:.86rem;margin-bottom:14px;line-height:1.6}
+.alert.info{background:var(--risk-blue-bg);border:1px solid var(--risk-blue);color:#8faff5}
+.alert.warn{background:var(--risk-yellow-bg);border:1px solid var(--risk-yellow);color:var(--risk-yellow)}
+
+/* ── ASSIGNMENT CARD ── */
+.assign-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px}
+.assign-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.assign-card-title{font-weight:700;font-size:.92rem}
+.assign-meta{display:flex;gap:16px;font-size:.78rem;color:var(--text-3);flex-wrap:wrap}
+.assign-meta span{display:flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div>
+      <span class="logo-text">SecureMind</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="gotoPage('dashboard')"><span class="nav-icon">📊</span> Дашборд</button>
+      <button class="nav-item" onclick="gotoPage('classes')"><span class="nav-icon">👥</span> Мои классы</button>
+      <button class="nav-item" onclick="gotoPage('students')"><span class="nav-icon">🎓</span> Ученики</button>
+      <button class="nav-item" onclick="gotoPage('reports')"><span class="nav-icon">📋</span> Отчёты</button>
+      <button class="nav-item" onclick="gotoPage('assign')"><span class="nav-icon">📌</span> Задания</button>
+      <div class="sidebar-section">Аккаунт</div>
+      <button class="nav-item" onclick="gotoPage('settings')"><span class="nav-icon">⚙️</span> Настройки</button>
+      <a href="index.html" class="nav-item"><span class="nav-icon">🚪</span> Выйти</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">Н</div>
+        <div class="sidebar-user-info"><strong>Нурлан А.</strong><span>Учитель</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="app-topbar">
+      <div class="app-topbar-title" id="pageTitle">Панель учителя</div>
+      <div id="topbarActions">
+        <button class="btn btn-primary btn-sm" onclick="showModal('newClass')">+ Новый класс</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ═══════════ DASHBOARD ═══════════ -->
+      <div id="page-dashboard" class="page-section active">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--accent-light)">👥</div>
+            <div class="stat-card-body"><strong>28</strong><span>Учеников всего</span></div>
+            <span class="stat-trend up">+3 новых</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-green-bg)">✅</div>
+            <div class="stat-card-body"><strong>74%</strong><span>Средний балл</span></div>
+            <span class="stat-trend up">+5% нед.</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-yellow-bg)">📊</div>
+            <div class="stat-card-body"><strong>63%</strong><span>Завершение</span></div>
+            <span class="stat-trend down">-2% нед.</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-blue-bg)">⚡</div>
+            <div class="stat-card-body"><strong>18</strong><span>Активны сегодня</span></div>
+          </div>
+        </div>
+
+        <div class="top-tabs">
+          <button class="tab-btn active" onclick="switchTab('overview')">Обзор класса</button>
+          <button class="tab-btn" onclick="switchTab('top-students')">Ученики</button>
+          <button class="tab-btn" onclick="switchTab('quick-assign')">Задания</button>
+        </div>
+
+        <div id="tab-overview">
+          <div class="dashboard-grid">
+            <div class="col-8">
+              <div class="widget">
+                <div class="widget-title">Прогресс класса по неделям</div>
+                <div class="chart-container"><canvas id="classChart"></canvas></div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="widget">
+                <div class="widget-title">Мои классы</div>
+                <div id="dashClassCards"></div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="widget">
+                <div class="widget-title">Топ учеников по активности</div>
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Имя</th><th>Уровень</th><th>Сценарии</th><th>Ср. балл</th><th>Тренд</th><th>Последняя акт.</th></tr></thead>
+                  <tbody id="studentTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-top-students" style="display:none">
+          <div class="widget">
+            <div class="widget-title">Все ученики</div>
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Имя</th><th>Класс</th><th>Уровень</th><th>XP</th><th>Сценарии</th><th>Ср. балл</th><th>Действие</th></tr></thead>
+              <tbody id="allStudentsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="tab-quick-assign" style="display:none">
+          <div class="widget" style="max-width:580px">
+            <div class="widget-title">Быстрое назначение задания</div>
+            <div class="alert info">💡 Выбери класс и сценарии, чтобы быстро отправить задание</div>
+            <div class="form-group">
+              <label class="form-label">Класс</label>
+              <select class="form-input form-select">
+                <option>10 «А» — Информатика</option><option>9 «Б» — Физика</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Сценарии</label>
+              <div id="quickAssignScens"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Дедлайн</label>
+              <input type="date" class="form-input">
+            </div>
+            <button class="btn btn-primary" onclick="showToast('✅ Задание назначено!')">Отправить →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ CLASSES ═══════════ -->
+      <div id="page-classes" class="page-section">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+          <button class="btn btn-primary" onclick="showModal('newClass')">+ Новый класс</button>
+        </div>
+        <div class="dashboard-grid">
+          <div class="col-4">
+            <div class="widget">
+              <div class="widget-title">10 «А» — Информатика</div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Учеников</span><strong>18</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Средний балл</span><strong style="color:var(--risk-green)">74%</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Завершение</span><strong>63%</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Активны сегодня</span><strong>12</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Учебный год</span><strong>2024-2025</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Код приглашения</span><strong style="color:var(--accent)">SM-X7Y2</strong></div>
+              </div>
+              <div class="prog-bar" style="margin-bottom:16px"><div class="prog-bar-inner" style="width:63%"></div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" style="flex:1" onclick="showToast('📋 Приглашение скопировано!')">Копировать код</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('Класс удалён','error')">🗑</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="widget">
+              <div class="widget-title">9 «Б» — Физика</div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Учеников</span><strong>10</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Средний балл</span><strong style="color:var(--risk-yellow)">61%</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Завершение</span><strong>48%</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Активны сегодня</span><strong>6</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Учебный год</span><strong>2024-2025</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:.85rem"><span style="color:var(--text-2)">Код приглашения</span><strong style="color:var(--accent)">SM-P4N9</strong></div>
+              </div>
+              <div class="prog-bar" style="margin-bottom:16px"><div class="prog-bar-inner" style="width:48%"></div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" style="flex:1" onclick="showToast('📋 Приглашение скопировано!')">Копировать код</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('Класс удалён','error')">🗑</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="widget" style="border:2px dashed var(--border);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:240px;cursor:pointer" onclick="showModal('newClass')">
+              <div style="font-size:2.5rem;margin-bottom:12px">➕</div>
+              <div style="font-weight:700;color:var(--text-2)">Добавить класс</div>
+              <div style="font-size:.78rem;color:var(--text-3);margin-top:4px">Нажми чтобы создать</div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="widget">
+              <div class="widget-title">Сравнение классов</div>
+              <div class="chart-container" style="height:220px"><canvas id="compareChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ STUDENTS ═══════════ -->
+      <div id="page-students" class="page-section">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <input type="text" class="form-input" style="max-width:280px" placeholder="🔍 Поиск ученика..." oninput="filterStudents(this.value)">
+          <select class="form-input form-select" style="max-width:200px" onchange="filterByClass(this.value)">
+            <option value="">Все классы</option>
+            <option>10А</option><option>9Б</option>
+          </select>
+          <span style="font-size:.85rem;color:var(--text-3)" id="studentCount">28 учеников</span>
+        </div>
+        <div class="dashboard-grid">
+          <div class="col-4">
+            <div class="widget" style="padding:12px">
+              <div class="widget-title" style="padding:0 6px">Список учеников</div>
+              <div id="studentListFull"></div>
+            </div>
+          </div>
+          <div class="col-8">
+            <div class="widget" id="studentDetailPanel">
+              <div style="text-align:center;padding:60px 20px;color:var(--text-3)">
+                <div style="font-size:3rem;margin-bottom:12px">👈</div>
+                <div>Выбери ученика слева для просмотра</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ REPORTS ═══════════ -->
+      <div id="page-reports" class="page-section">
+        <div class="stat-grid" style="margin-bottom:28px">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-green-bg)">📈</div>
+            <div class="stat-card-body"><strong>+12%</strong><span>Рост за месяц</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-blue-bg)">🏆</div>
+            <div class="stat-card-body"><strong>3</strong><span>Отличников</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-yellow-bg)">⚠️</div>
+            <div class="stat-card-body"><strong>4</strong><span>Отстающих</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--risk-red-bg)">🔴</div>
+            <div class="stat-card-body"><strong>2</strong><span>Неактивны 7+ дней</span></div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="col-8">
+            <div class="widget">
+              <div class="widget-title">Динамика успеваемости</div>
+              <div class="chart-container"><canvas id="reportChart"></canvas></div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="widget">
+              <div class="widget-title">Распределение по баллам</div>
+              <div class="chart-container" style="height:280px"><canvas id="pieChart"></canvas></div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="widget">
+              <div class="widget-title">Доступные отчёты</div>
+              <div class="report-card">
+                <div class="report-icon" style="background:var(--risk-green-bg)">📊</div>
+                <div class="report-info">
+                  <div class="report-title">Общий отчёт по классу</div>
+                  <div class="report-desc">Успеваемость, завершение, активность — за текущий период</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showToast('📥 Отчёт скачивается...')">Скачать PDF</button>
+              </div>
+              <div class="report-card">
+                <div class="report-icon" style="background:var(--risk-blue-bg)">👤</div>
+                <div class="report-info">
+                  <div class="report-title">Индивидуальные отчёты</div>
+                  <div class="report-desc">Детальный анализ по каждому ученику</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showToast('📥 Отчёты скачиваются...')">Скачать ZIP</button>
+              </div>
+              <div class="report-card">
+                <div class="report-icon" style="background:var(--risk-yellow-bg)">⚠️</div>
+                <div class="report-info">
+                  <div class="report-title">Список отстающих</div>
+                  <div class="report-desc">4 ученика с баллом ниже 60% — требуют внимания</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showToast('📋 Список скопирован!')">Экспорт</button>
+              </div>
+              <div class="report-card">
+                <div class="report-icon" style="background:var(--accent-light)">📅</div>
+                <div class="report-info">
+                  <div class="report-title">Посещаемость по дням</div>
+                  <div class="report-desc">Активность учеников за последние 30 дней</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showToast('📥 CSV загружается...')">Скачать CSV</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ASSIGN ═══════════ -->
+      <div id="page-assign" class="page-section">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div class="widget" style="height:100%">
+              <div class="widget-title">Назначить задание</div>
+              <div class="form-group">
+                <label class="form-label">Класс / группа</label>
+                <select class="form-input form-select">
+                  <option>10 «А» — Информатика</option><option>9 «Б» — Физика</option><option>Все классы</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Выбери сценарии</label>
+                <div id="assignScensFull"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Дедлайн</label>
+                <input type="date" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Комментарий</label>
+                <textarea class="form-input" rows="3" placeholder="Необязательно: инструкции для учеников..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-full" onclick="showToast('✅ Задание назначено всему классу!')">Отправить задание →</button>
+            </div>
+          </div>
+          <div>
+            <div class="widget">
+              <div class="widget-title">Активные задания</div>
+              <div class="assign-card">
+                <div class="assign-card-header">
+                  <div>
+                    <div class="assign-card-title">📧 Фишинговое письмо + 💬 Соц. инженерия</div>
+                    <div class="assign-meta" style="margin-top:4px">
+                      <span>👥 10 «А»</span>
+                      <span>📅 Дедлайн: 28 фев.</span>
+                      <span class="risk-badge yellow">В процессе</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="showToast('Задание отозвано','error')">Отозвать</button>
+                </div>
+                <div style="font-size:.8rem;color:var(--text-2);margin-bottom:8px">Выполнили: 11 из 18 учеников</div>
+                <div class="prog-bar"><div class="prog-bar-inner" style="width:61%"></div></div>
+              </div>
+              <div class="assign-card">
+                <div class="assign-card-header">
+                  <div>
+                    <div class="assign-card-title">🌐 Поддельный сайт</div>
+                    <div class="assign-meta" style="margin-top:4px">
+                      <span>👥 9 «Б»</span>
+                      <span>📅 Дедлайн: 1 мар.</span>
+                      <span class="risk-badge blue">Новое</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="showToast('Задание отозвано','error')">Отозвать</button>
+                </div>
+                <div style="font-size:.8rem;color:var(--text-2);margin-bottom:8px">Выполнили: 2 из 10 учеников</div>
+                <div class="prog-bar"><div class="prog-bar-inner" style="width:20%"></div></div>
+              </div>
+              <div class="assign-card" style="opacity:.6">
+                <div class="assign-card-header">
+                  <div>
+                    <div class="assign-card-title">🔑 Гигиена паролей</div>
+                    <div class="assign-meta" style="margin-top:4px">
+                      <span>👥 10 «А»</span>
+                      <span>📅 Завершено: 15 фев.</span>
+                      <span class="risk-badge green">Завершено</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:.8rem;color:var(--text-2);margin-bottom:8px">Выполнили: 16 из 18 учеников</div>
+                <div class="prog-bar"><div class="prog-bar-inner" style="width:89%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /assign grid -->
+      </div>
+
+      <!-- ═══════════ SETTINGS ═══════════ -->
+      <div id="page-settings" class="page-section">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div>
+            <div class="widget">
+              <div class="widget-title">Профиль учителя</div>
+              <div class="form-group"><label class="form-label">Имя</label><input type="text" class="form-input" value="Нурлан Ахметов"></div>
+              <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" value="nurlan@school.kz"></div>
+              <div class="form-group"><label class="form-label">Школа</label><input type="text" class="form-input" value="(Общеобразовательная школа 50) отдела образования по городу Усть-Каменогорску"></div>
+              <div class="form-group"><label class="form-label">Предмет</label><input type="text" class="form-input" value="Информатика, Физика"></div>
+              <div class="form-group"><label class="form-label">Телефон</label><input type="text" class="form-input" value="+7 (727) 000-00-00"></div>
+              <button class="btn btn-primary btn-full" onclick="showToast('✅ Профиль сохранён!')">Сохранить изменения</button>
+            </div>
+          </div>
+          <div>
+            <div class="widget">
+              <div class="widget-title">Уведомления</div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+                <label class="checkbox-group"><input type="checkbox" checked><span>Новые ученики в классе</span></label>
+                <label class="checkbox-group"><input type="checkbox" checked><span>Ученик выполнил задание</span></label>
+                <label class="checkbox-group"><input type="checkbox"><span>Еженедельный отчёт на email</span></label>
+                <label class="checkbox-group"><input type="checkbox" checked><span>Отстающие ученики</span></label>
+                <label class="checkbox-group"><input type="checkbox"><span>Напоминание о дедлайне</span></label>
+                <label class="checkbox-group"><input type="checkbox" checked><span>Новые сообщения от учеников</span></label>
+              </div>
+              <button class="btn btn-outline btn-full" onclick="showToast('✅ Уведомления сохранены!')">Сохранить</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="widget">
+              <div class="widget-title">Безопасность</div>
+              <div class="form-group"><label class="form-label">Текущий пароль</label><input type="password" class="form-input" placeholder="••••••••"></div>
+              <div class="form-group"><label class="form-label">Новый пароль</label><input type="password" class="form-input" placeholder="••••••••"></div>
+              <div class="form-group"><label class="form-label">Подтвердить пароль</label><input type="password" class="form-input" placeholder="••••••••"></div>
+              <button class="btn btn-outline btn-full" onclick="showToast('✅ Пароль изменён!')">Изменить пароль</button>
+            </div>
+            <div class="widget">
+              <div class="widget-title">Аккаунт</div>
+              <div style="font-size:.85rem;color:var(--text-2);margin-bottom:16px;line-height:1.6">Учебный год: <strong style="color:var(--text-1)">2024-2025</strong><br>Роль: <strong style="color:var(--text-1)">Учитель</strong><br>Дата регистрации: <strong style="color:var(--text-1)">27.02.2026</strong></div>
+              <button class="btn btn-danger btn-full" onclick="showToast('Выход из аккаунта...','error')">Выйти из аккаунта</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<!-- Modal: New Class -->
+<div class="modal-overlay" id="newClassModal" onclick="if(event.target===this)closeModal('newClass')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('newClass')">×</button>
+    <h2>Новый класс</h2>
+    <p>Создай класс и пригласи учеников по коду</p>
+    <div class="form-group"><label class="form-label">Название класса</label><input type="text" class="form-input" placeholder="10 «А»"></div>
+    <div class="form-group"><label class="form-label">Предмет</label><input type="text" class="form-input" placeholder="Информатика"></div>
+    <div class="form-group"><label class="form-label">Учебный год</label>
+      <select class="form-input form-select"><option>2024-2025</option><option>2025-2026</option></select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="closeModal('newClass');showToast('✅ Класс создан! Код приглашения: SM-X7Y2')">Создать класс</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const students=[
+  {name:'Алижан Каким',grade:'10А',level:3,xp:850,avgScore:87,done:5,trend:'up',last:'2ч назад'},
+  {name:'Мадияр Кужахметов',grade:'10А',level:2,xp:540,avgScore:74,done:3,trend:'up',last:'5ч назад'},
+  {name:'Зарина Нурланова',grade:'10А',level:3,xp:920,avgScore:91,done:6,trend:'up',last:'1ч назад'},
+  {name:'Алибек Токтаров',grade:'10А',level:2,xp:380,avgScore:62,done:2,trend:'down',last:'2д назад'},
+  {name:'Дана Рахимова',grade:'10А',level:2,xp:450,avgScore:68,done:3,trend:'up',last:'1д назад'},
+  {name:'Нурсултан Байжанов',grade:'10А',level:1,xp:180,avgScore:51,done:1,trend:'down',last:'5д назад'},
+  {name:'Гулим Касымова',grade:'10А',level:3,xp:760,avgScore:83,done:5,trend:'up',last:'3ч назад'},
+  {name:'Арман Досанов',grade:'10А',level:2,xp:520,avgScore:70,done:3,trend:'up',last:'4ч назад'},
+  {name:'Асель Жаксыбекова',grade:'9Б',level:2,xp:410,avgScore:66,done:2,trend:'up',last:'1д назад'},
+  {name:'Тимур Сагинтаев',grade:'9Б',level:1,xp:210,avgScore:55,done:1,trend:'down',last:'4д назад'},
+];
+
+const scenarios=['📧 Фишинговое письмо','💬 Соц. инженерия','🌐 Поддельный сайт','📲 QR-мошенничество','🔑 Гигиена паролей','💀 Вредоносное ПО'];
+
+// ── PAGE NAVIGATION ───────────────────────────────────────────────────────────
+const pageTitles={
+  dashboard:'Панель учителя',
+  classes:'Мои классы',
+  students:'Ученики',
+  reports:'Отчёты',
+  assign:'Задания',
+  settings:'Настройки'
+};
+const pageActions={
+  dashboard:'<button class="btn btn-primary btn-sm" onclick="showModal(\'newClass\')">+ Новый класс</button>',
+  classes:'<button class="btn btn-primary btn-sm" onclick="showModal(\'newClass\')">+ Новый класс</button>',
+  students:'<button class="btn btn-outline btn-sm" onclick="showToast(\'📥 Экспорт готов!\')">Экспорт CSV</button>',
+  reports:'<button class="btn btn-outline btn-sm" onclick="showToast(\'📥 Отчёт скачивается...\')">Скачать всё</button>',
+  assign:'',
+  settings:''
+};
+
+let currentPage = 'dashboard';
+let chartsInit = {};
+
+function gotoPage(name) {
+  document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const btns = document.querySelectorAll('.nav-item');
+  btns.forEach(b=>{ if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+name+"'")) b.classList.add('active'); });
+  document.getElementById('pageTitle').textContent = pageTitles[name] || name;
+  document.getElementById('topbarActions').innerHTML = pageActions[name] || '';
+  currentPage = name;
+
+  // Init charts lazily
+  if(name==='reports' && !chartsInit.report) initReportCharts();
+  if(name==='classes' && !chartsInit.compare) initCompareChart();
+}
+
+// ── TABS (Dashboard) ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['overview','top-students','quick-assign'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===name ? 'block':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ── STUDENT TABLE (Dashboard) ─────────────────────────────────────────────────
+const tbody=document.getElementById('studentTableBody');
+[...students].sort((a,b)=>b.xp-a.xp).forEach((s,i)=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${i+1}</td>
+    <td><div style="display:flex;align-items:center;gap:10px">
+      <div class="student-avatar">${s.name[0]}</div>
+      <div><div class="student-name">${s.name}</div><div class="student-meta">${s.grade}</div></div>
+    </div></td>
+    <td><span class="risk-badge ${s.level>=3?'green':s.level===2?'blue':'yellow'}">Ур. ${s.level}</span></td>
+    <td>${s.done}/6</td>
+    <td><strong style="color:${s.avgScore>=80?'var(--risk-green)':s.avgScore>=60?'var(--risk-yellow)':'var(--risk-red)'}">${s.avgScore}%</strong></td>
+    <td style="color:${s.trend==='up'?'var(--risk-green)':'var(--risk-red)'};font-size:1.1rem">${s.trend==='up'?'↑':'↓'}</td>
+    <td style="color:var(--text-3)">${s.last}</td>`;
+  tbody.appendChild(tr);
+});
+
+// All students table
+const allTbody=document.getElementById('allStudentsTable');
+[...students].sort((a,b)=>b.avgScore-a.avgScore).forEach((s,i)=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${i+1}</td>
+    <td><div style="display:flex;align-items:center;gap:10px">
+      <div class="student-avatar">${s.name[0]}</div>
+      <div class="student-name">${s.name}</div>
+    </div></td>
+    <td>${s.grade}</td>
+    <td><span class="risk-badge ${s.level>=3?'green':s.level===2?'blue':'yellow'}">Ур. ${s.level}</span></td>
+    <td>${s.xp} XP</td>
+    <td>${s.done}/6</td>
+    <td><strong style="color:${s.avgScore>=80?'var(--risk-green)':s.avgScore>=60?'var(--risk-yellow)':'var(--risk-red)'}">${s.avgScore}%</strong></td>
+    <td><button class="btn btn-outline btn-sm" onclick="gotoPage('students');setTimeout(()=>openStudentDetail(${students.indexOf(s)}),50)">Открыть</button></td>`;
+  allTbody.appendChild(tr);
+});
+
+// ── DASHBOARD CLASS CARDS ─────────────────────────────────────────────────────
+document.getElementById('dashClassCards').innerHTML=`
+  <div class="teacher-class-card" onclick="gotoPage('classes')">
+    <div class="class-card-header"><div class="class-icon">📚</div><div><div class="class-card-name">10 «А»</div><div class="class-card-meta">Информатика · 2024-2025</div></div></div>
+    <div class="class-stats"><div class="class-stat-item"><strong>18</strong><span>Учеников</span></div><div class="class-stat-item"><strong>74%</strong><span>Ср. балл</span></div><div class="class-stat-item"><strong>63%</strong><span>Завершение</span></div></div>
+  </div>
+  <div class="teacher-class-card" onclick="gotoPage('classes')">
+    <div class="class-card-header"><div class="class-icon">🔬</div><div><div class="class-card-name">9 «Б»</div><div class="class-card-meta">Физика · 2024-2025</div></div></div>
+    <div class="class-stats"><div class="class-stat-item"><strong>10</strong><span>Учеников</span></div><div class="class-stat-item"><strong>61%</strong><span>Ср. балл</span></div><div class="class-stat-item"><strong>48%</strong><span>Завершение</span></div></div>
+  </div>`;
+
+// ── STUDENT LIST (Students page) ──────────────────────────────────────────────
+let filteredStudents = [...students];
+
+function renderStudentList() {
+  const sl = document.getElementById('studentListFull');
+  sl.innerHTML='';
+  filteredStudents.forEach((s,i)=>{
+    const div=document.createElement('div');
+    div.className='student-row';
+    div.id='srow-'+students.indexOf(s);
+    div.innerHTML=`<div class="student-avatar">${s.name[0]}</div>
+      <div class="student-info">
+        <div class="student-name">${s.name}</div>
+        <div class="student-meta">${s.grade} · ${s.xp} XP</div>
+      </div>
+      <span class="risk-badge ${s.avgScore>=80?'green':s.avgScore>=60?'yellow':'red'}">${s.avgScore}%</span>`;
+    const idx=students.indexOf(s);
+    div.onclick=()=>openStudentDetail(idx);
+    sl.appendChild(div);
+  });
+}
+renderStudentList();
+
+function filterStudents(q) {
+  filteredStudents = students.filter(s=>s.name.toLowerCase().includes(q.toLowerCase()));
+  renderStudentList();
+}
+function filterByClass(cls) {
+  filteredStudents = cls ? students.filter(s=>s.grade===cls) : [...students];
+  renderStudentList();
+}
+
+function openStudentDetail(idx) {
+  const s=students[idx];
+  document.querySelectorAll('.student-row').forEach(r=>r.classList.remove('selected'));
+  const row=document.getElementById('srow-'+idx);
+  if(row) row.classList.add('selected');
+
+  const scenarioLabels=['📧 Фишинг','💬 Соц. инж.','🌐 Поддельный сайт','📲 QR','🔑 Пароли','💀 Вредонос','🔒 Утечка'];
+  const scenariosHtml = scenarioLabels.map((sc,i)=>{
+    const done=i<s.done;
+    const score=done?Math.max(40,s.avgScore+(Math.random()>0.5?10:-10)|0):0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.9rem;flex:1">${sc}</span>
+      ${done?`<div class="prog-bar" style="width:80px"><div class="prog-bar-inner" style="width:${score}%"></div></div>
+      <span style="font-size:.8rem;font-weight:700;color:${score>=80?'var(--risk-green)':score>=60?'var(--risk-yellow)':'var(--risk-red)'};min-width:38px;text-align:right">${score}%</span>
+      <span class="risk-badge green" style="font-size:.7rem">✓</span>`
+      :`<span style="font-size:.8rem;color:var(--text-3)">Не начато</span>`}
+    </div>`;
+  }).join('');
+
+  document.getElementById('studentDetailPanel').innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+      <div class="student-avatar" style="width:52px;height:52px;font-size:1.3rem;flex-shrink:0">${s.name[0]}</div>
+      <div>
+        <h3 style="font-family:var(--font-head);font-size:1.2rem">${s.name}</h3>
+        <div style="color:var(--text-2);font-size:.85rem">${s.grade} · Уровень ${s.level} · ${s.xp} XP</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="showToast('📧 Сообщение отправлено!')">Написать</button>
+        <button class="btn btn-primary btn-sm" onclick="gotoPage('assign');showToast('Выбери сценарии и назначь!')">Назначить задание</button>
+      </div>
+    </div>
+    <div class="stat-grid" style="margin-bottom:20px;grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card" style="padding:14px"><div class="stat-card-body"><strong>${s.avgScore}%</strong><span>Ср. балл</span></div></div>
+      <div class="stat-card" style="padding:14px"><div class="stat-card-body"><strong>${s.done}/6</strong><span>Сценариев</span></div></div>
+      <div class="stat-card" style="padding:14px"><div class="stat-card-body"><strong>${s.xp}</strong><span>XP набрано</span></div></div>
+      <div class="stat-card" style="padding:14px"><div class="stat-card-body"><strong>${s.last}</strong><span>Активность</span></div></div>
+    </div>
+    <div style="padding:14px;border-radius:var(--radius);border:1px solid ${s.avgScore<70?'var(--risk-yellow)':'var(--risk-green)'};background:${s.avgScore<70?'var(--risk-yellow-bg)':'var(--risk-green-bg)'};margin-bottom:20px;font-size:.86rem">
+      ${s.avgScore<70?'⚠️ <strong>Требует внимания:</strong> рекомендуем повторить базовые сценарии':'✅ <strong>Хороший прогресс:</strong> ученик стабильно развивается'}
+    </div>
+    <div style="font-weight:700;font-size:.85rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Прогресс по сценариям</div>
+    ${scenariosHtml}`;
+}
+
+// ── ASSIGN SCENARIOS ──────────────────────────────────────────────────────────
+['assignScensFull','quickAssignScens'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  scenarios.forEach(s=>{
+    el.innerHTML+=`<label class="checkbox-group"><input type="checkbox"><span>${s}</span></label>`;
+  });
+});
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+// Main dashboard chart
+new Chart(document.getElementById('classChart'),{
+  type:'line',
+  data:{
+    labels:['Нед.1','Нед.2','Нед.3','Нед.4','Нед.5','Нед.6'],
+    datasets:[
+      {label:'Средний балл',data:[58,63,67,71,74,76],fill:true,backgroundColor:'rgba(0,212,170,0.1)',borderColor:'#00D4AA',tension:0.4,pointBackgroundColor:'#00D4AA'},
+      {label:'Завершение %',data:[20,35,48,55,60,63],fill:false,borderColor:'#3b82f6',tension:0.4,pointBackgroundColor:'#3b82f6'}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5c6480'}},x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5c6480'}}},
+    plugins:{legend:{labels:{color:'#9ba3bb'}}}
+  }
+});
+
+function initReportCharts(){
+  chartsInit.report=true;
+  new Chart(document.getElementById('reportChart'),{
+    type:'bar',
+    data:{
+      labels:['📧 Фишинг','💬 Соц.','🌐 Сайт','📲 QR','🔑 Пароли','💀 Вредонос'],
+      datasets:[
+        {label:'10А',data:[74,68,81,72,88,65],backgroundColor:'rgba(0,212,170,0.7)',borderRadius:6},
+        {label:'9Б',data:[58,55,70,60,75,52],backgroundColor:'rgba(59,130,246,0.7)',borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5c6480'}},x:{grid:{display:false},ticks:{color:'#5c6480'}}},
+      plugins:{legend:{labels:{color:'#9ba3bb'}}}
+    }
+  });
+  new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{
+      labels:['Отлично (80+)','Хорошо (60-79)','Слабо (<60)'],
+      datasets:[{data:[8,14,6],backgroundColor:['#00c48c','#f5a623','#ff4d4d'],borderColor:'#171b26',borderWidth:3}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#9ba3bb',padding:16}}}
+    }
+  });
+}
+
+function initCompareChart(){
+  chartsInit.compare=true;
+  new Chart(document.getElementById('compareChart'),{
+    type:'radar',
+    data:{
+      labels:['Фишинг','Соц. инж.','Поддельный сайт','Пароли','Вредонос'],
+      datasets:[
+        {label:'10А',data:[74,68,81,88,65],borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.15)',pointBackgroundColor:'#00D4AA'},
+        {label:'9Б',data:[58,55,70,75,52],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.15)',pointBackgroundColor:'#3b82f6'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.1)'},ticks:{display:false},pointLabels:{color:'#9ba3bb'}}},
+      plugins:{legend:{labels:{color:'#9ba3bb'}}}
+    }
+  });
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showModal(name){document.getElementById(name+'Modal').classList.add('open')}
+function closeModal(name){document.getElementById(name+'Modal').classList.remove('open')}
+function showToast(msg,type='success'){
+  const tc=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className='toast '+(type!=='success'?type:'');
+  t.textContent=msg;
+  tc.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+</script>
+</body>
+</html>

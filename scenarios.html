@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Сценарии — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css"><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="components.css"><link rel="stylesheet" href="app.css">
+<style>
+/* AI scenario premium card */
+.scenario-item.ai-premium{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(0,212,170,0.25),0 6px 28px rgba(0,212,170,0.12);
+}
+.scenario-item.ai-premium .scenario-item-header{
+  background:linear-gradient(135deg,#0a2a3a,#0d3020);
+}
+.diff-adapt{background:rgba(0,212,170,0.2);color:var(--accent)}
+</style>
+</head>
+<body class="app-page">
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div><span class="logo-text">SecureMind</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">🏠</span> Главная</a>
+      <a href="scenarios.html" class="sidebar-nav-item active"><span class="nav-icon">🎮</span> Сценарии</a>
+      <a href="progress.html" class="sidebar-nav-item"><span class="nav-icon">📊</span> Прогресс</a>
+      <a href="achievements.html" class="sidebar-nav-item"><span class="nav-icon">🏆</span> Достижения</a>
+      <div class="sidebar-section">Аккаунт</div>
+      <a href="index.html" class="sidebar-nav-item"><span class="nav-icon">🚪</span> Выйти</a>
+    </nav>
+  </aside>
+  <main class="main-content">
+    <div class="app-topbar"><div class="app-topbar-title">Сценарии</div></div>
+    <div class="page-content">
+      <div class="section-header" style="text-align:left;margin-bottom:28px">
+        <h2>7 интерактивных сценариев</h2>
+        <p style="color:var(--text-2); margin-left:0px">Проходи сценарии в любом порядке. Твой прогресс сохраняется автоматически.</p>
+      </div>
+      <div class="scenario-catalog" id="scenCatalog"></div>
+    </div>
+  </main>
+</div>
+<script>
+const user=JSON.parse(localStorage.getItem('sm_user')||'{}');
+const scenarios=[
+  {id:'ai',icon:'🧠',title:'AI-сценарий (новый каждый раз)',desc:'AI генерирует уникальное фишинговое письмо под твой уровень. Каждое прохождение — новый вызов. Работает на локальной LLM.',diff:'adapt',diffLabel:'Адаптив',time:'5 мин',pts:'∞',url:'scenario-ai.html'},
+  {id:'phishing',icon:'📧',title:'Фишинговое письмо',desc:'Изучи 5 писем и определи, какие из них — мошенничество. Используй инструменты для анализа заголовков и ссылок.',diff:'hard',diffLabel:'Сложно',time:'10 мин',pts:500,url:'scenario-phishing.html'},
+  {id:'social',icon:'💬',title:'Социальная инженерия',desc:'Незнакомец пишет тебе в мессенджере. Распознай манипуляцию и выбери правильную реакцию в ветвящемся диалоге.',diff:'hard',diffLabel:'Сложно',time:'8 мин',pts:500,url:'scenario-social.html'},
+  {id:'fake',icon:'🌐',title:'Поддельный сайт',desc:'Перед тобой копия сайта. Найди все скрытые признаки подделки — их не менее 8. Кликай на подозрительные элементы.',diff:'med',diffLabel:'Средне',time:'12 мин',pts:500,url:'scenario-fake.html'},
+  {id:'qr',icon:'📲',title:'QR-мошенничество',desc:'Серия QR-кодов из публичных мест. Проанализируй каждый и определи безопасность — не открывая ссылку напрямую.',diff:'med',diffLabel:'Средне',time:'6 мин',pts:500,url:'scenarios.html'},
+  {id:'password',icon:'🔑',title:'Гигиена паролей',desc:'Создай надёжный пароль, настрой 2FA и узнай, насколько быстро можно взломать твои текущие пароли.',diff:'easy',diffLabel:'Легко',time:'8 мин',pts:500,url:'scenario-password.html'},
+  {id:'malware',icon:'💀',title:'Вредоносное ПО',desc:'Почтовый ящик с вложениями и файловый менеджер. Определи какие файлы безопасно открывать, а какие — нет.',diff:'hard',diffLabel:'Сложно',time:'10 мин',pts:500,url:'scenarios.html'},
+];
+
+const catalog=document.getElementById('scenCatalog');
+scenarios.forEach(s=>{
+  const done=user.scenarios&&user.scenarios[s.id];
+  const diffClx=s.diff==='hard'?'diff-hard':s.diff==='med'?'diff-med':s.diff==='adapt'?'diff-adapt':'diff-easy';
+  const premiumCls=s.id==='ai'?' ai-premium':'';
+  catalog.innerHTML+=`<div class="scenario-item${premiumCls}" onclick="location.href='${s.url}'">
+    <div class="scenario-item-header" style="color:#fff">
+      <div class="scenario-item-icon">${s.icon}</div>
+      <div style="font-size:.9rem;font-weight:600;color:#fff">${s.title}</div>
+      <div class="scenario-item-diff ${diffClx}">${s.diffLabel}</div>
+    </div>
+    <div class="scenario-item-body">
+      <p>${s.desc}</p>
+      <div class="scenario-item-footer" style="margin:-16px -20px -16px;padding:12px 20px">
+        <div class="scenario-item-meta"><span>⏱ ${s.time}</span><span>⭐ ${s.pts} очков</span></div>
+        <span class="scenario-status ${done?'status-done':'status-new'}">${done?'✅ '+done.score+'%':'Новый'}</span>
+      </div>
+    </div>
+  </div>`;
+});
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

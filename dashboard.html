@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Дашборд — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css"><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="components.css"><link rel="stylesheet" href="app.css">
+</head>
+<body class="app-page">
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div>
+      <span class="logo-text">SecureMind</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-nav-item active"><span class="nav-icon">🏠</span> Главная</a>
+      <a href="scenarios.html" class="sidebar-nav-item"><span class="nav-icon">🎮</span> Сценарии</a>
+      <a href="progress.html" class="sidebar-nav-item"><span class="nav-icon">📊</span> Прогресс</a>
+      <a href="achievements.html" class="sidebar-nav-item"><span class="nav-icon">🏆</span> Достижения</a>
+      <div class="sidebar-section">Аккаунт</div>
+      <a href="index.html" class="sidebar-nav-item"><span class="nav-icon">🚪</span> Выйти</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sideAvatar">А</div>
+        <div class="sidebar-user-info">
+          <strong id="sideName">Алижан</strong>
+          <span id="sideLevel">Уровень 1</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="app-topbar">
+      <button onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none;background:none;border:none;font-size:1.4rem;cursor:pointer" id="menuBtn">☰</button>
+      <div class="app-topbar-title" id="topbarTitle">Личный кабинет</div>
+      <button class="lang-toggle">KZ</button>
+    </div>
+
+    <div class="page-content">
+      <div class="dashboard-grid">
+        <!-- Level Banner -->
+        <div class="col-12">
+          <div class="level-banner widget">
+            <div class="level-avatar" id="dashAvatar">А</div>
+            <div class="level-info">
+              <h2 id="dashName">Алижан</h2>
+              <div class="level-sub" id="dashGreet"></div>
+              <div class="level-xp-label"><span id="xpLabel">XP 500</span><span id="xpVal"></span></div>
+              <div class="level-xp-bar"><div class="level-xp-fill" id="xpFill"></div></div>
+            </div>
+            <div class="level-badge" id="levelBadge">Уровень 1</div>
+          </div>
+        </div>
+
+        <!-- Streak -->
+        <div class="col-4">
+          <div class="widget streak-widget">
+            <div class="widget-title">Стрик 🔥</div>
+            <div class="streak-icon">🔥</div>
+            <div class="streak-num" id="streakNum">0</div>
+            <div class="streak-label">дней подряд</div>
+          </div>
+        </div>
+
+        <!-- Recommended -->
+        <div class="col-8">
+          <div class="widget">
+            <div class="widget-title">Рекомендовано для тебя</div>
+            <div class="module-rec">
+              <div class="module-rec-icon">🎣</div>
+              <div class="module-rec-info">
+                <h4>Распознай фишинговое письмо</h4>
+                <p>Научись выявлять мошеннические письма по 8 ключевым признакам</p>
+                <div class="module-progress-label"><span id="recPct">0%</span> выполнено</div>
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" id="recProgress" style="width:0%"></div></div>
+              </div>
+              <a href="scenario-phishing.html" class="btn btn-primary">Начать</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student info -->
+        <div class="col-4">
+          <div class="widget">
+            <div class="widget-title">Ученик</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="student-avatar">🏫</div>
+              <div class="student-info">
+                <div class="student-name">"Общеобразовательная школа 50" отдела образования по городу Усть-Каменогорску</div>
+                <div class="student-meta">11 класс</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Scenarios -->
+        <div class="col-8">
+          <div class="widget">
+            <div class="widget-title">Последние сценарии <a href="scenarios.html" style="font-size:.8rem;color:var(--accent)">Все →</a></div>
+            <div id="recentScenarios"></div>
+          </div>
+        </div>
+
+        <!-- Class Rank -->
+        <div class="col-4">
+          <div class="widget">
+            <div class="widget-title">Рейтинг класса 🏅</div>
+            <div id="classRank"></div>
+          </div>
+        </div>
+
+        <!-- AI Plan widget (shown only if user.ai_plan exists) -->
+        <div class="col-12" id="aiPlanWidget" style="display:none">
+          <div class="widget" style="border-color:rgba(0,212,170,0.3);background:linear-gradient(135deg,#f0fdf9,#fff)">
+            <div class="widget-title" style="color:var(--accent)">🧠 Твой AI-план обучения</div>
+            <div id="aiPlanContent"></div>
+          </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="col-12">
+          <div class="widget">
+            <div class="widget-title">Активность за последние 3 месяца</div>
+            <div class="heatmap" id="heatmap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const user=JSON.parse(localStorage.getItem('sm_user')||'null');
+if(!user){window.location.href='login.html';throw 'no user'}
+
+const levels=[{n:'Новичок',max:200},{n:'Осведомлённый',max:500},{n:'Осторожный',max:1000},{n:'Бдительный',max:1800},{n:'Защитник',max:3000},{n:'Кибер-эксперт',max:9999}];
+const lvl=Math.max(0,Math.min(user.level-1,5));
+const firstName=user.name.split(' ')[0];
+const initials=user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+
+document.getElementById('sideAvatar').textContent=initials;
+document.getElementById('dashAvatar').textContent=initials;
+document.getElementById('sideName').textContent=user.name;
+document.getElementById('dashName').textContent=firstName;
+document.getElementById('sideLevel').textContent='Уровень '+user.level;
+document.getElementById('levelBadge').textContent=levels[lvl].n;
+document.getElementById('streakNum').textContent=user.streak||0;
+
+const xpCur=user.xp||0;
+const xpMax=levels[lvl].max;
+const xpPrev=lvl>0?levels[lvl-1].max:0;
+const pct=Math.min(((xpCur-xpPrev)/(xpMax-xpPrev))*100,100);
+document.getElementById('xpLabel').textContent=`${xpCur} XP`;
+document.getElementById('xpVal').textContent=`${xpMax} XP`;
+document.getElementById('xpFill').style.width=pct+'%';
+
+const greetings=['Продолжай в том же духе! 🚀','Ты делаешь успехи! 💪','Отличная работа! ⚡','Ты почти эксперт! 🎯'];
+document.getElementById('dashGreet').textContent=greetings[Math.floor(Math.random()*greetings.length)];
+
+// Recent scenarios
+const scenDefs=[{id:'phishing',icon:'📧',name:'Фишинговое письмо',url:'scenario-phishing.html'},{id:'social',icon:'💬',name:'Соц. инженерия',url:'scenario-social.html'},{id:'fake',icon:'🌐',name:'Поддельный сайт',url:'scenario-fake.html'},{id:'qr',icon:'📲',name:'QR-мошенничество',url:'scenarios.html'},{id:'password',icon:'🔑',name:'Гигиена паролей',url:'scenario-password.html'}];
+const recentEl=document.getElementById('recentScenarios');
+let recHtml='';
+scenDefs.forEach(s=>{
+  const done=user.scenarios&&user.scenarios[s.id];
+  recHtml+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:1.3rem">${s.icon}</span>
+    <div style="flex:1"><div style="font-size:.9rem;font-weight:600">${s.name}</div></div>
+    ${done?`<span class="risk-badge green">${done.score}%</span>`:'<span class="risk-badge blue">Новый</span>'}
+    <a href="${s.url}" class="btn btn-sm ${done?'btn-outline':'btn-primary'}">${done?'Повтор':'Начать'}</a>
+  </div>`;
+});
+recentEl.innerHTML=recHtml;
+
+// Recommended progress
+const phDone=user.scenarios&&user.scenarios.phishing;
+const phPct=phDone?phDone.score:0;
+document.getElementById('recPct').textContent=phPct+'%';
+document.getElementById('recProgress').style.width=phPct+'%';
+
+// Class rank
+const classData=[{n:'Айдос М.',xp:1240,lvl:3},{n:'Гулим К.',xp:980,lvl:3},{n:firstName,xp:xpCur,lvl:user.level},{n:'Алмас Т.',xp:720,lvl:2},{n:'Дана Р.',xp:540,lvl:2}].sort((a,b)=>b.xp-a.xp);
+let rankHtml='';
+classData.slice(0,5).forEach((p,i)=>{
+  const isMe=p.n===firstName;
+  rankHtml+=`<div class="student-row">
+    <span style="font-size:.85rem;font-weight:700;color:${i<3?'var(--risk-yellow)':'var(--text-3)'};width:20px">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</span>
+    <div class="student-avatar" style="${isMe?'background:var(--accent);color:var(--primary)':''}">${p.n[0]}</div>
+    <div class="student-info"><div class="student-name"${isMe?' style="color:var(--accent)"':''}>${p.n}</div><div class="student-meta">Ур. ${p.lvl} · ${p.xp} XP</div></div>
+  </div>`;
+});
+document.getElementById('classRank').innerHTML=rankHtml;
+
+// Heatmap
+const hm=document.getElementById('heatmap');
+for(let i=0;i<84;i++){
+  const cell=document.createElement('div');
+  const r=Math.random();
+  cell.className='heatmap-cell'+(r>.85?' l4':r>.7?' l3':r>.5?' l2':r>.3?' l1':'');
+  hm.appendChild(cell);
+}
+
+// AI Plan widget
+const SCEN_ICONS_DB = {phishing:'📧', social:'💬', fake:'🌐', qr:'📲', password:'🔑'};
+const SCEN_URLS_DB  = {phishing:'scenario-phishing.html', social:'scenario-social.html', fake:'scenario-fake.html', qr:'scenarios.html', password:'scenario-password.html'};
+if(user.ai_plan && user.ai_plan.learning_path){
+  const plan=user.ai_plan;
+  const nextStep=plan.learning_path.find(s=>!user.scenarios?.[s.scenario_id]?.done);
+  const riskColors={low:'var(--risk-green)',medium:'var(--risk-yellow)',high:'var(--risk-red)'};
+  const riskColor=riskColors[plan.risk_level]||riskColors.medium;
+  let html='';
+  if(nextStep){
+    const sid=nextStep.scenario_id;
+    html+=`<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:.85rem;color:var(--text-3);margin-bottom:4px">Следующий шаг:</div>
+        <div style="font-size:1rem;font-weight:700">${SCEN_ICONS_DB[sid]||'📚'} ${nextStep.title||sid}</div>
+        <div style="font-size:.83rem;color:var(--text-2);font-style:italic;margin-top:4px">${nextStep.why||''}</div>
+      </div>
+      <a href="${SCEN_URLS_DB[sid]||'scenarios.html'}" class="btn btn-primary">Продолжить обучение →</a>
+    </div>`;
+  }else{
+    html='<div style="color:var(--risk-green);font-weight:600">🎉 Все шаги плана выполнены!</div>';
+  }
+  html+=`<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <span style="font-size:.78rem;padding:3px 10px;border-radius:99px;background:rgba(0,212,170,0.12);color:var(--accent);font-weight:600">
+      Уровень риска: ${plan.risk_level||'medium'}
+    </span>
+    <span style="font-size:.78rem;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--text-3)">
+      ${plan.learning_path.filter(s=>user.scenarios?.[s.scenario_id]?.done).length}/${plan.learning_path.length} шагов выполнено
+    </span>
+    <a href="ai-plan.html" style="font-size:.78rem;padding:3px 10px;border-radius:99px;color:var(--accent);font-weight:600">Посмотреть весь план →</a>
+  </div>`;
+  document.getElementById('aiPlanContent').innerHTML=html;
+  document.getElementById('aiPlanWidget').style.display='block';
+}
+
+// Responsive
+if(window.innerWidth<900)document.getElementById('menuBtn').style.display='block';
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

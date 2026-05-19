@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI-план обучения — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="app.css">
+<style>
+/* Loading overlay */
+.ai-loading-overlay{
+  position:fixed;inset:0;background:var(--bg);z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+}
+@keyframes brain-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.ai-brain{font-size:4rem;animation:brain-float 2s ease-in-out infinite}
+.ai-loading-title{font-family:var(--font-head);font-size:1.4rem;font-weight:800;color:var(--primary)}
+.ai-loading-sub{font-size:.9rem;color:var(--text-2);max-width:400px;text-align:center;line-height:1.6}
+.ai-loading-steps{display:flex;flex-direction:column;gap:8px;margin-top:4px;min-width:280px}
+.ai-step{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--text-3)}
+.ai-step.active{color:var(--accent);font-weight:600}
+.ai-step.done{color:var(--risk-green)}
+
+/* Plan page specific */
+.plan-hero{background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  border-radius:var(--radius-xl);padding:32px 36px;color:#fff;position:relative;overflow:hidden;margin-bottom:24px}
+.plan-hero::before{content:'';position:absolute;right:-40px;top:-40px;
+  width:200px;height:200px;background:radial-gradient(circle,rgba(0,212,170,0.2),transparent);border-radius:50%}
+.plan-hero-title{font-family:var(--font-head);font-size:1.6rem;margin-bottom:8px;position:relative}
+.plan-hero-msg{font-size:.95rem;opacity:.8;line-height:1.7;max-width:580px;position:relative}
+
+.risk-banner{display:inline-flex;align-items:center;gap:10px;padding:10px 20px;
+  border-radius:99px;font-family:var(--font-head);font-weight:800;font-size:1rem}
+.risk-banner.low{background:rgba(46,204,113,0.15);border:2px solid #2ecc71;color:#2ecc71}
+.risk-banner.medium{background:rgba(243,156,18,0.15);border:2px solid #f39c12;color:#f39c12}
+.risk-banner.high{background:rgba(231,76,60,0.15);border:2px solid #e74c3c;color:#e74c3c}
+
+.strengths-list,.weak-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.strengths-list li{display:flex;align-items:center;gap:8px;font-size:.9rem;
+  padding:9px 14px;background:var(--risk-green-bg);border-radius:var(--radius);color:var(--primary)}
+.strengths-list li::before{content:'✓';font-weight:800;color:var(--risk-green)}
+.weak-list li{display:flex;align-items:center;gap:8px;font-size:.9rem;
+  padding:9px 14px;background:var(--risk-yellow-bg);border-radius:var(--radius);color:var(--primary)}
+.weak-list li::before{content:'!';font-weight:800;color:var(--risk-yellow);
+  width:18px;height:18px;background:var(--risk-yellow);color:#fff;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+
+.path-steps{display:flex;flex-direction:column;gap:16px}
+.path-step{display:flex;gap:16px;align-items:flex-start;padding:20px;
+  background:var(--surface-2);border-radius:var(--radius-lg);border:1px solid var(--border);
+  transition:border-color .2s}
+.path-step:hover{border-color:var(--accent)}
+.path-step-num{width:40px;height:40px;border-radius:50%;background:var(--primary);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-weight:800;font-size:1rem;flex-shrink:0}
+.path-step-body{flex:1}
+.path-step-title{font-weight:700;font-size:.95rem;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.path-step-why{font-size:.83rem;color:var(--text-2);font-style:italic;margin-bottom:12px;line-height:1.5}
+.path-step-done{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;
+  background:var(--risk-green-bg);border-radius:99px;font-size:.78rem;font-weight:600;color:var(--risk-green)}
+
+.footer-days{text-align:center;padding:20px;font-size:.9rem;color:var(--text-2)}
+.footer-days strong{color:var(--primary);font-family:var(--font-head);font-size:1.1rem}
+
+/* Error banner */
+.ollama-err{padding:16px 20px;background:var(--risk-red-bg);border:1px solid var(--risk-red);
+  border-radius:var(--radius-lg);margin-bottom:20px;display:none}
+</style>
+</head>
+<body class="app-page">
+
+<!-- Loading overlay -->
+<div class="ai-loading-overlay" id="loadingOverlay">
+  <div class="ai-brain">🧠</div>
+  <div class="ai-loading-title">AI анализирует твои ответы...</div>
+  <div class="ai-loading-sub">Строим персональный план обучения на основе результатов диагностики</div>
+  <div class="ai-loading-steps">
+    <div class="ai-step active" id="step1">⏳ Анализ результатов диагностики</div>
+    <div class="ai-step" id="step2">🔍 Выявление слабых тем</div>
+    <div class="ai-step" id="step3">🗺️ Составление траектории обучения</div>
+  </div>
+  <div class="spinner" style="margin-top:8px"></div>
+</div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/>
+        </svg>
+      </div>
+      <span class="logo-text">SecureMind</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">🏠</span> Главная</a>
+      <a href="scenarios.html" class="sidebar-nav-item"><span class="nav-icon">🎮</span> Сценарии</a>
+      <a href="progress.html" class="sidebar-nav-item"><span class="nav-icon">📊</span> Прогресс</a>
+      <a href="achievements.html" class="sidebar-nav-item"><span class="nav-icon">🏆</span> Достижения</a>
+      <div class="sidebar-section">Аккаунт</div>
+      <a href="index.html" class="sidebar-nav-item"><span class="nav-icon">🚪</span> Выйти</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sideAvatar">А</div>
+        <div class="sidebar-user-info">
+          <strong id="sideName">...</strong>
+          <span id="sideLevel">Уровень 1</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="app-topbar">
+      <div class="app-topbar-title">🎯 Твой персональный план обучения</div>
+    </div>
+
+    <div class="page-content" id="planContent" style="display:none">
+
+      <!-- Ollama error banner -->
+      <div class="ollama-err" id="ollamaErr"></div>
+
+      <!-- Hero with personal message -->
+      <div class="plan-hero" id="planHero">
+        <div class="plan-hero-title">🎯 Персональный план готов!</div>
+        <div class="plan-hero-msg" id="personalMessage">Загрузка...</div>
+      </div>
+
+      <div class="dashboard-grid">
+
+        <!-- Strengths -->
+        <div class="col-6">
+          <div class="widget">
+            <div class="widget-title">💪 Твои сильные стороны</div>
+            <ul class="strengths-list" id="strengthsList"></ul>
+          </div>
+        </div>
+
+        <!-- Weaknesses -->
+        <div class="col-6">
+          <div class="widget">
+            <div class="widget-title">⚠️ Требует внимания</div>
+            <ul class="weak-list" id="weakList"></ul>
+          </div>
+        </div>
+
+        <!-- Risk level -->
+        <div class="col-4">
+          <div class="widget" style="text-align:center">
+            <div class="widget-title">📍 Уровень риска</div>
+            <div id="riskBadge" style="margin:8px auto;display:inline-flex" class="risk-banner medium">⚠️ Средний</div>
+            <div id="riskDesc" style="margin-top:12px;font-size:.85rem;color:var(--text-2);line-height:1.6"></div>
+          </div>
+        </div>
+
+        <!-- Learning path -->
+        <div class="col-8">
+          <div class="widget">
+            <div class="widget-title">🗺️ Рекомендованный путь обучения</div>
+            <div class="path-steps" id="pathSteps"></div>
+          </div>
+        </div>
+
+        <!-- Footer + CTA -->
+        <div class="col-12">
+          <div class="widget" style="text-align:center;padding:32px">
+            <div class="footer-days" id="footerDays"></div>
+            <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-primary btn-lg" onclick="savePlanAndGo()">
+                Сохранить план и перейти на главную →
+              </button>
+              <a href="scenarios.html" class="btn btn-outline btn-lg">Смотреть все сценарии</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="ai-core.js"></script>
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const SCEN_ICONS = { phishing:'📧', social:'💬', fake:'🌐', qr:'📲', password:'🔑' };
+const SCEN_URLS  = {
+  phishing: 'scenario-phishing.html',
+  social:   'scenario-social.html',
+  fake:     'scenario-fake.html',
+  qr:       'scenarios.html',
+  password: 'scenario-password.html'
+};
+const TOPICS = [
+  'Фишинговое письмо с угрозой',
+  'Безопасный URL (HTTPS + домен)',
+  'СМС-код через соцсеть (соц. инженерия)',
+  'Надёжный пароль',
+  'QR-коды в публичных местах',
+  'Поддельный домен (apple-id-verify.ru)',
+  'Маскированный EXE (invoice.pdf.exe)',
+  'Публичный Wi-Fi и MITM',
+  'Приватность в соцсетях',
+  'HTTPS vs HTTP'
+];
+
+// ── Read user ──────────────────────────────────────────────────────────────
+const user = JSON.parse(localStorage.getItem('sm_user') || '{}');
+if (!user || !user.name) { window.location.href = 'login.html'; throw ''; }
+
+const firstName = user.name.split(' ')[0];
+const initials  = user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+document.getElementById('sideAvatar').textContent = initials;
+document.getElementById('sideName').textContent   = user.name;
+document.getElementById('sideLevel').textContent  = 'Уровень ' + (user.level || 1);
+
+// ── Fallback plan ──────────────────────────────────────────────────────────
+function buildFallbackPlan() {
+  const scen = user.scenarios || {};
+  const lvl  = user.level || 1;
+  return {
+    strengths: lvl >= 3
+      ? ['Распознавание фишинговых ссылок', 'Основы безопасных паролей']
+      : ['Базовое понимание кибербезопасности'],
+    weaknesses: [
+      !scen.phishing || scen.phishing.score < 70 ? 'Фишинговые письма' : null,
+      !scen.social   || scen.social.score   < 70 ? 'Социальная инженерия' : null,
+      !scen.password || scen.password.score < 70 ? 'Гигиена паролей' : null,
+    ].filter(Boolean).slice(0, 3) || ['Фишинговые письма'],
+    risk_level: lvl >= 3 ? 'low' : lvl >= 2 ? 'medium' : 'high',
+    personal_message: `${firstName}, ты прошёл диагностику — отличный первый шаг! Твой план построен на основе результатов. Пройди рекомендованные сценарии и твой уровень защиты значительно вырастет.`,
+    learning_path: [
+      { step:1, scenario_id:'phishing',  title:'Фишинговое письмо',   why:'Самый распространённый вектор атак — освой первым' },
+      { step:2, scenario_id:'social',    title:'Социальная инженерия', why:'Манипуляции через мессенджеры — второй по опасности вектор' },
+      { step:3, scenario_id:'password',  title:'Гигиена паролей',      why:'Надёжные пароли — основа цифровой защиты' },
+      { step:4, scenario_id:'fake',      title:'Поддельный сайт',      why:'Научись отличать оригинальные сайты от фейков' },
+    ],
+    estimated_days: lvl >= 3 ? 7 : lvl >= 2 ? 14 : 21
+  };
+}
+
+// ── Prompt builder ─────────────────────────────────────────────────────────
+function buildPlanPrompt() {
+  const answers = user.diagnostic_answers || [];
+  const answersStr = answers.length
+    ? answers.map((a, i) => `${i+1}. ${TOPICS[a.q] || 'Вопрос '+(a.q+1)}: ${a.correct ? '✅ Верно' : '❌ Неверно'}`).join('\n')
+    : 'Данные ответов недоступны (использовать уровень: ' + (user.level || 1) + ')';
+
+  return `Ты — AI-педагог платформы SecureMind по кибербезопасности. Ученик ${user.name}, ${user.grade || '10'} класс, прошёл диагностику из 10 вопросов.
+
+Темы диагностики:
+${TOPICS.map((t,i) => `${i+1}. ${t}`).join('\n')}
+
+Ответы ученика:
+${answersStr}
+
+Задача: проанализируй слабые темы и составь персональную траекторию обучения.
+
+Верни СТРОГО JSON без markdown:
+{
+  "strengths": ["сильная тема 1", "сильная тема 2"],
+  "weaknesses": ["слабая тема 1", "слабая тема 2", "слабая тема 3"],
+  "risk_level": "low",
+  "personal_message": "2-3 предложения мотивирующего обращения к ученику по имени ${firstName}",
+  "learning_path": [
+    {"step": 1, "scenario_id": "phishing", "title": "Название", "why": "Почему именно это первым"},
+    {"step": 2, "scenario_id": "social",   "title": "Название", "why": "Причина"},
+    {"step": 3, "scenario_id": "password", "title": "Название", "why": "Причина"},
+    {"step": 4, "scenario_id": "fake",     "title": "Название", "why": "Причина"}
+  ],
+  "estimated_days": 14
+}
+
+Валидные scenario_id: phishing, social, fake, qr, password. risk_level: "low", "medium" или "high".`;
+}
+
+// ── Loading animation ──────────────────────────────────────────────────────
+function animateLoadingSteps() {
+  setTimeout(() => {
+    document.getElementById('step1').className = 'ai-step done';
+    document.getElementById('step2').className = 'ai-step active';
+  }, 800);
+  setTimeout(() => {
+    document.getElementById('step2').className = 'ai-step done';
+    document.getElementById('step3').className = 'ai-step active';
+  }, 1800);
+}
+
+// ── Main: load plan ────────────────────────────────────────────────────────
+let aiPlan = null;
+
+async function loadPlan() {
+  animateLoadingSteps();
+  try {
+    const raw  = await AICore.callOllama(buildPlanPrompt(), { num_predict: 1000 });
+    const data = AICore.parseJSON(raw);
+    if (!data.learning_path || !Array.isArray(data.learning_path)) throw new Error('Invalid plan structure');
+    aiPlan = data;
+  } catch (err) {
+    console.warn('Ollama unavailable, using fallback plan:', err.message);
+    AICore.showOllamaError(document.getElementById('ollamaErr'));
+    aiPlan = buildFallbackPlan();
+  }
+  renderPlan(aiPlan);
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('planContent').style.display = 'block';
+}
+
+// ── Render plan ────────────────────────────────────────────────────────────
+function renderPlan(plan) {
+  // Personal message
+  document.getElementById('personalMessage').textContent = plan.personal_message || '';
+
+  // Strengths
+  const sl = document.getElementById('strengthsList');
+  sl.innerHTML = (plan.strengths || []).map(s => `<li>${escHtml(s)}</li>`).join('');
+
+  // Weaknesses
+  const wl = document.getElementById('weakList');
+  wl.innerHTML = (plan.weaknesses || []).map(w => `<li>${escHtml(w)}</li>`).join('');
+
+  // Risk level
+  const rl = (plan.risk_level || 'medium').toLowerCase();
+  const riskEl = document.getElementById('riskBadge');
+  const riskDescs = {
+    low:    'Ты хорошо знаешь основы кибербезопасности. Продолжай практиковаться для поддержания уровня.',
+    medium: 'Есть пробелы в знаниях. Пройди рекомендованные сценарии чтобы закрыть уязвимые темы.',
+    high:   'Требуется срочное обучение. Пройди все сценарии — ты уязвим перед реальными атаками.'
+  };
+  const riskLabels = { low: '✅ Низкий', medium: '⚠️ Средний', high: '🔴 Высокий' };
+  riskEl.className  = `risk-banner ${rl}`;
+  riskEl.textContent = riskLabels[rl] || riskLabels.medium;
+  document.getElementById('riskDesc').textContent = riskDescs[rl] || riskDescs.medium;
+
+  // Learning path
+  const ps = document.getElementById('pathSteps');
+  const scen = user.scenarios || {};
+  ps.innerHTML = (plan.learning_path || []).map(step => {
+    const sid  = step.scenario_id;
+    const done = scen[sid] && scen[sid].done;
+    const icon = SCEN_ICONS[sid] || '📚';
+    const url  = SCEN_URLS[sid]  || 'scenarios.html';
+    return `
+      <div class="path-step">
+        <div class="path-step-num">${step.step}</div>
+        <div class="path-step-body">
+          <div class="path-step-title">
+            ${icon} ${escHtml(step.title || sid)}
+            ${done ? '<span class="path-step-done">✓ Пройдено</span>' : ''}
+          </div>
+          <div class="path-step-why">${escHtml(step.why || '')}</div>
+          ${done
+            ? `<a href="${url}" class="btn btn-sm btn-outline">Повторить</a>`
+            : `<a href="${url}" class="btn btn-sm btn-primary">Начать →</a>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  // Footer
+  document.getElementById('footerDays').innerHTML =
+    `Ориентировочное время до экспертного уровня: <strong>${plan.estimated_days || 14} дней</strong>`;
+}
+
+// ── Save plan & redirect ───────────────────────────────────────────────────
+function savePlanAndGo() {
+  if (!aiPlan) return;
+  const u = JSON.parse(localStorage.getItem('sm_user') || '{}');
+  u.ai_plan = aiPlan;
+  localStorage.setItem('sm_user', JSON.stringify(u));
+  window.location.href = 'dashboard.html';
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadPlan();
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

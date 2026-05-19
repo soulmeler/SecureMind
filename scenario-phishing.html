@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Сценарий: Фишинг — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#171b26;--surface-2:#1e2333;--border:#2a2f40;
+  --accent:#00D4AA;--accent-light:rgba(0,212,170,0.1);
+  --text-1:#eef0f6;--text-2:#9ba3bb;--text-3:#5c6480;
+  --risk-red:#ff4d4d;--risk-red-bg:rgba(255,77,77,0.1);
+  --risk-green:#00c48c;--risk-green-bg:rgba(0,196,140,0.1);
+  --risk-yellow:#f5a623;--risk-yellow-bg:rgba(245,166,35,0.1);
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font-body);background:var(--bg);color:var(--text-1)}
+body{display:flex;flex-direction:column}
+
+.app-topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);font-family:var(--font-head);font-size:1.05rem;font-weight:700;flex-shrink:0}
+.page-content{flex:1;padding:28px;overflow-y:auto;min-height:0}
+
+.risk-badge{padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;font-family:var(--font-head)}
+.risk-badge.red{background:var(--risk-red-bg);color:var(--risk-red)}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius);font-family:var(--font-body);font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none}
+.btn-lg{padding:14px 28px;font-size:1rem}
+.btn-primary{background:var(--accent);color:#0a0f1a}.btn-primary:hover{background:#00f0c0}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-1)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--risk-green-bg);border:1.5px solid var(--risk-green);color:var(--risk-green)}.btn-success:hover{background:var(--risk-green);color:#0a0f1a}
+.btn-danger{background:var(--risk-red-bg);border:1.5px solid var(--risk-red);color:var(--risk-red)}.btn-danger:hover{background:var(--risk-red);color:#fff}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px}
+.widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.widget-title{font-family:var(--font-head);font-weight:800;font-size:.9rem;margin-bottom:12px;color:var(--text-1)}
+
+/* Scenario layout: email client + sidebar */
+.scenario-layout{display:grid;grid-template-columns:1fr 260px;gap:20px;height:calc(100vh - 118px)}
+.scenario-main{display:flex;flex-direction:column;min-height:0}
+.scenario-sidebar-panel{display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+
+/* Email client */
+.email-client{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.email-client-toolbar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;flex-shrink:0}
+.email-inbox{overflow-y:auto;flex-shrink:0}
+.inbox-email{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.inbox-email:hover{background:var(--surface-2)}
+.inbox-email.selected{background:var(--accent-light);border-left:3px solid var(--accent)}
+.email-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:var(--accent);flex-shrink:0}
+.inbox-email-info{flex:1;min-width:0}
+.inbox-email-from{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-email-subj{font-size:.8rem;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.inbox-email-prev{font-size:.72rem;color:var(--text-3);margin-top:2px}
+
+.email-view{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.email-view-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.email-view-header h3{font-size:1rem;font-weight:700;margin-bottom:10px}
+.email-meta{font-size:.82rem;color:var(--text-2);line-height:1.8}
+.email-body{flex:1;padding:20px;overflow-y:auto;font-size:.9rem;line-height:1.7}
+.email-link{color:var(--risk-red);text-decoration:underline;cursor:pointer;word-break:break-all}
+.email-actions-bar{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.tool-btn{padding:9px 16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text-2);font-family:var(--font-body);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Result */
+.result-screen{max-width:600px;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:20px;align-items:center;padding:20px 0}
+.result-icon{font-size:5rem}
+.result-score{font-family:var(--font-head);font-size:4rem;font-weight:800;color:var(--accent)}
+.result-label{color:var(--text-2);font-size:1rem;margin-top:-12px}
+.result-level-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 28px;display:flex;align-items:center;gap:16px;width:100%}
+.result-breakdown{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;width:100%;display:flex;flex-direction:column;gap:10px}
+.result-row{display:flex;justify-content:space-between;font-size:.9rem;color:var(--text-2)}
+
+/* Toast */
+#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:var(--radius);font-size:.88rem;font-weight:500;animation:slideIn .3s ease;max-width:320px}
+.toast.success{background:var(--risk-green-bg);border:1px solid var(--risk-green);color:var(--risk-green)}
+.toast.error{background:var(--risk-red-bg);border:1px solid var(--risk-red);color:var(--risk-red)}
+.toast.warning{background:var(--risk-yellow-bg);border:1px solid var(--risk-yellow);color:var(--risk-yellow)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <div>🎣 Распознай фишинговое письмо</div>
+  <span class="risk-badge red">Сложно</span>
+  <div style="margin-left:auto;font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:var(--accent)" id="liveScore">0 / 500</div>
+</div>
+
+<div class="page-content">
+
+  <!-- Intro -->
+  <div id="introScreen" class="card" style="max-width:700px;margin:0 auto;text-align:center;padding:48px 40px">
+    <div style="font-size:4rem;margin-bottom:16px">📧</div>
+    <h2 style="font-family:var(--font-head);font-size:1.8rem;margin-bottom:12px">Фишинговое письмо</h2>
+    <p style="color:var(--text-2);margin-bottom:28px;line-height:1.7">Перед тобой почтовый ящик с 5 письмами. Некоторые из них — фишинговые. Изучи каждое письмо и выбери правильное действие: «Безопасно» или «Фишинг».<br><br>За каждый верный ответ ты получаешь очки. Используй инструменты для анализа!</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⏱ ~10 минут</strong><br><span style="color:var(--text-3)">Примерное время</span></div>
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⭐ 500 очков</strong><br><span style="color:var(--text-3)">Максимум</span></div>
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>🔍 2 инструмента</strong><br><span style="color:var(--text-3)">Лупа и ссылочник</span></div>
+    </div>
+    <button onclick="startScenario()" class="btn btn-primary btn-lg" style="margin-top:28px">Начать сценарий →</button>
+  </div>
+
+  <!-- Scenario -->
+  <div id="scenarioScreen" style="display:none">
+    <div class="scenario-layout">
+      <div class="scenario-main">
+        <div class="email-client">
+          <div class="email-client-toolbar">
+            <span style="font-size:.85rem;font-weight:600;color:var(--text-3)">📥 Входящие</span>
+            <span style="margin-left:auto;font-size:.8rem;color:var(--text-3)" id="emailCount"></span>
+          </div>
+          <div style="display:flex;flex:1;overflow:hidden">
+            <div class="email-inbox" id="emailInbox" style="width:300px;border-right:1px solid var(--border)"></div>
+            <div class="email-view" id="emailView" style="display:none">
+              <div class="email-view-header">
+                <h3 id="viewSubject"></h3>
+                <div class="email-meta">
+                  <strong>От:</strong> <span id="viewFrom"></span><br>
+                  <strong>Кому:</strong> <span id="viewTo"></span><br>
+                  <strong>Дата:</strong> <span id="viewDate"></span>
+                </div>
+              </div>
+              <div class="email-body" id="viewBody"></div>
+              <div class="email-actions-bar" id="emailActBar">
+                <button class="btn btn-success" onclick="judgeEmail(false)">✅ Безопасно</button>
+                <button class="btn btn-danger" onclick="judgeEmail(true)">🚨 Это фишинг!</button>
+                <button class="tool-btn" onclick="useTool('link')">🔍 Проверить ссылку</button>
+              </div>
+              <div id="judgeFeedback" style="display:none;padding:16px;border-radius:var(--radius);margin:16px"></div>
+            </div>
+            <div id="emailPlaceholder" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-3)">← Выбери письмо для просмотра</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scenario-sidebar-panel">
+        <div class="widget">
+          <div class="widget-title">Прогресс</div>
+          <div style="text-align:center;margin-bottom:12px">
+            <div style="font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--accent)" id="sideScore">0</div>
+            <div style="font-size:.8rem;color:var(--text-3)">очков</div>
+          </div>
+          <div id="emailProgress"></div>
+        </div>
+        <div class="widget">
+          <div class="widget-title">Признаки фишинга</div>
+          <div style="font-size:.82rem;color:var(--text-2);line-height:1.9">
+            🔴 Подозрительный домен<br>
+            🔴 Срочность / угрозы<br>
+            🔴 Запрос личных данных<br>
+            🟡 Опечатки в тексте<br>
+            🟡 Подозрительные ссылки<br>
+            🟢 Официальный домен<br>
+            🟢 Нет просьбы о данных
+          </div>
+        </div>
+        <div class="widget" id="toolResult" style="display:none">
+          <div class="widget-title">🔍 Анализ ссылки</div>
+          <div id="toolContent" style="font-size:.85rem;line-height:1.7"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="resultScreen" style="display:none">
+    <div class="result-screen">
+      <div class="result-icon" id="resIcon"></div>
+      <div class="result-score" id="resScore"></div>
+      <div class="result-label">из 500 очков</div>
+      <div class="result-level-card" id="resLevelCard"></div>
+      <div class="result-breakdown" id="resBreakdown"></div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="scenarios.html" class="btn btn-outline btn-lg">← Все сценарии</a>
+        <a href="dashboard.html" class="btn btn-primary btn-lg">На главную →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast-container"></div>
+
+<script>
+const emails=[
+  {id:0,from:'security-alert@bank-kaspi-verify.tk',to:'you@gmail.com',date:'Сегодня, 09:14',subject:'⚠️ СРОЧНО: Ваш счёт заблокирован!',body:'Уважаемый клиент!<br><br>Ваш банковский счёт <strong>заблокирован</strong> из-за подозрительной активности.<br><br>Для восстановления доступа необходимо <strong>срочно</strong> подтвердить данные:<br><br><a class="email-link" onclick="useTool(\'link\')">http://kaspi-bank-restore.tk/verify?id=AX992</a><br><br>⚠️ Если не сделаете это в течение 24 часов, счёт будет <strong>удалён безвозвратно</strong>.<br><br>С уважением,<br>Служба безопасности Каспи',isPhishing:true,hints:['Домен .tk (не kaspi.kz)','Угроза удаления счёта','Подозрительная ссылка','Срочность как давление'],linkAnalysis:'🔴 ОПАСНО! Домен kaspi-bank-restore.tk не является официальным. Настоящий Kaspi Bank использует только kaspi.kz'},
+  {id:1,from:'orders@kaspi.kz',to:'you@gmail.com',date:'Вчера, 15:32',subject:'Ваш заказ #KZ-8821 отправлен',body:'Добрый день!<br><br>Ваш заказ <strong>#KZ-8821</strong> был отправлен 18.11.2024.<br><br>Трек-номер: <a class="email-link">KZ1234567890</a><br>Ожидаемая доставка: 20-22 ноября<br><br>Следить за доставкой можно в приложении Kaspi.<br><br>С уважением,<br>Kaspi.kz',isPhishing:false,hints:['Официальный домен kaspi.kz','Нет просьбы о данных','Конкретный номер заказа'],linkAnalysis:'✅ Безопасно. Официальный домен kaspi.kz. Ссылка ведёт на kaspi.kz/tracking'},
+  {id:2,from:'prize-winners@apple-gift-2024.ru',to:'you@gmail.com',date:'Вчера, 11:07',subject:'🎁 Вы выиграли iPhone 16 Pro! Заберите приз',body:'Поздравляем! 🎉<br><br>Вы были выбраны случайным образом среди <strong>1,000,000 пользователей</strong> и выиграли <strong>iPhone 16 Pro!</strong><br><br>Для получения приза введите данные карты для оплаты доставки (всего 500 тг):<br><br><a class="email-link" onclick="useTool(\'link2\')">apple-gift-2024.ru/claim?winner=YOU</a><br><br>⏰ Предложение действительно 2 часа!',isPhishing:true,hints:['Домен .ru, не apple.com','Слишком хорошее предложение','Просит данные карты','Искусственная срочность'],linkAnalysis:'🔴 ОПАСНО! apple-gift-2024.ru — поддельный сайт. Apple никогда не проводит розыгрыши по email и не просит данные карты для "доставки приза".'},
+  {id:3,from:'noreply@google.com',to:'you@gmail.com',date:'2 дня назад',subject:'Уведомление о безопасности аккаунта Google',body:'Добрый день!<br><br>Мы зафиксировали новый вход в ваш аккаунт Google:<br><br><strong>Устройство:</strong> iPhone 14<br><strong>Местоположение:</strong> Алматы, Казахстан<br><strong>Время:</strong> 16 ноября, 22:41<br><br>Это были вы? Если нет — защитите аккаунт через настройки безопасности Google.<br><br>Google не запрашивает пароли по email.',isPhishing:false,hints:['Официальный домен google.com','Google прямо говорит что не просит пароли','Конкретные данные входа'],linkAnalysis:'✅ Безопасно. noreply@google.com — официальный адрес Google для уведомлений.'},
+  {id:4,from:'support@sberbank-online.net',to:'you@gmail.com',date:'3 дня назад',subject:'Подтвердите личность для продолжения работы',body:'Уважаемый пользователь!<br><br>В рамках обновления системы безопасности требуется подтверждение личности.<br><br>Введите следующие данные на защищённой странице:<br>• Полное ФИО<br>• Номер карты<br>• CVV-код<br>• PIN-код<br><br><a class="email-link" onclick="useTool(\'link3\')">Подтвердить данные →</a><br><br>Работаем для вашей безопасности.',isPhishing:true,hints:['Домен .net вместо .ru','Запрашивает CVV и PIN — банки НИКОГДА этого не делают','Размытые формулировки'],linkAnalysis:'🔴 КРАЙНЕ ОПАСНО! Ни один банк никогда не запрашивает CVV-код и PIN по email. Это 100% мошенничество.'}
+];
+
+let score=0,judged={},currentEmail=null;
+
+function startScenario(){
+  document.getElementById('introScreen').style.display='none';
+  document.getElementById('scenarioScreen').style.display='block';
+  renderInbox();
+}
+
+function renderInbox(){
+  const inbox=document.getElementById('emailInbox');
+  inbox.innerHTML='';
+  emails.forEach(e=>{
+    const div=document.createElement('div');
+    div.className='inbox-email'+(currentEmail===e.id?' selected':'');
+    div.innerHTML=`<div class="email-avatar">${e.from[0].toUpperCase()}</div>
+      <div class="inbox-email-info">
+        <div class="inbox-email-from">${e.from}</div>
+        <div class="inbox-email-subj">${e.subject}</div>
+        <div class="inbox-email-prev">${e.date}</div>
+      </div>
+      ${judged[e.id]!==undefined?'<span style="font-size:1.2rem">'+(judged[e.id]===e.isPhishing?'✅':'❌')+'</span>':''}`;
+    div.onclick=()=>openEmail(e.id);
+    inbox.appendChild(div);
+  });
+  document.getElementById('emailCount').textContent=`${Object.keys(judged).length}/${emails.length} проверено`;
+  updateSideProgress();
+}
+
+function openEmail(id){
+  currentEmail=id;
+  const e=emails[id];
+  document.getElementById('emailPlaceholder').style.display='none';
+  const view=document.getElementById('emailView');
+  view.style.display='flex';
+  document.getElementById('viewSubject').textContent=e.subject;
+  document.getElementById('viewFrom').textContent=e.from;
+  document.getElementById('viewTo').textContent=e.to;
+  document.getElementById('viewDate').textContent=e.date;
+  document.getElementById('viewBody').innerHTML=e.body;
+  document.getElementById('toolResult').style.display='none';
+  const actBar=document.getElementById('emailActBar');
+  const fb=document.getElementById('judgeFeedback');
+  if(judged[id]!==undefined){actBar.style.display='none';fb.style.display='block';showJudgeFeedback(id)}
+  else{actBar.style.display='flex';fb.style.display='none'}
+  renderInbox();
+}
+
+function judgeEmail(isPhishing){
+  if(currentEmail===null)return;
+  const e=emails[currentEmail];
+  const correct=isPhishing===e.isPhishing;
+  judged[currentEmail]=isPhishing;
+  if(correct){score+=100;showToast('✅ Верно! +100 очков','success')}
+  else{score=Math.max(0,score-20);showToast('❌ Неверно. -20 очков','error')}
+  document.getElementById('sideScore').textContent=score;
+  document.getElementById('liveScore').textContent=score+' / 500';
+  document.getElementById('emailActBar').style.display='none';
+  document.getElementById('judgeFeedback').style.display='block';
+  showJudgeFeedback(currentEmail);
+  renderInbox();
+  if(Object.keys(judged).length===emails.length)setTimeout(showResult,1000);
+}
+
+function showJudgeFeedback(id){
+  const e=emails[id];
+  const correct=judged[id]===e.isPhishing;
+  const fb=document.getElementById('judgeFeedback');
+  fb.style.background=correct?'var(--risk-green-bg)':'var(--risk-red-bg)';
+  fb.style.border=`1px solid ${correct?'var(--risk-green)':'var(--risk-red)'}`;
+  fb.style.borderRadius='var(--radius)';
+  fb.innerHTML=`<div style="font-weight:700;margin-bottom:8px">${correct?'✅ Верно!':'❌ Неверно'} ${e.isPhishing?'Это был фишинг!':'Это было безопасное письмо.'}</div>
+    <div style="font-size:.88rem;line-height:1.7;color:var(--text-2)"><strong>Признаки:</strong><br>${e.hints.map(h=>'• '+h).join('<br>')}</div>`;
+}
+
+function useTool(type){
+  const e=emails[currentEmail];if(!e)return;
+  document.getElementById('toolResult').style.display='block';
+  document.getElementById('toolContent').innerHTML=e.linkAnalysis;
+  score=Math.max(0,score-5);
+  document.getElementById('sideScore').textContent=score;
+  showToast('🔍 Инструмент использован (-5 очков)','warning');
+}
+
+function updateSideProgress(){
+  document.getElementById('emailProgress').innerHTML=emails.map(e=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.82rem">
+      <span>${judged[e.id]!==undefined?(judged[e.id]===e.isPhishing?'✅':'❌'):'⬜'}</span>
+      <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.subject.substring(0,28)}...</span>
+    </div>`).join('');
+}
+
+function showResult(){
+  document.getElementById('scenarioScreen').style.display='none';
+  document.getElementById('resultScreen').style.display='block';
+  const pct=Math.round(score/500*100);
+  document.getElementById('resIcon').textContent=pct>=80?'🏆':pct>=60?'👍':'📚';
+  document.getElementById('resScore').textContent=score;
+  const correct=Object.keys(judged).filter(id=>judged[id]===emails[id].isPhishing).length;
+  document.getElementById('resLevelCard').innerHTML=`<span style="font-size:1.8rem">${pct>=80?'🛡️':'📧'}</span><div><strong>${pct>=80?'Отличный результат!':pct>=60?'Хороший результат':'Нужно больше практики'}</strong><br><span style="color:var(--text-2);font-size:.88rem">${correct} из ${emails.length} верных</span></div>`;
+  document.getElementById('resBreakdown').innerHTML=`
+    <div class="result-row"><span>Правильных ответов</span><strong style="color:var(--risk-green)">${correct} из ${emails.length}</strong></div>
+    <div class="result-row"><span>Итоговый счёт</span><strong>${score} / 500</strong></div>
+    <div class="result-row"><span>Точность</span><strong>${pct}%</strong></div>`;
+  try{
+    const user=JSON.parse(localStorage.getItem('sm_user')||'{}');
+    if(!user.scenarios)user.scenarios={};
+    user.scenarios.phishing={done:true,score:pct};
+    user.xp=(user.xp||0)+Math.round(score/10);
+    localStorage.setItem('sm_user',JSON.stringify(user));
+  }catch(e){}
+}
+
+function showToast(msg,type='success'){
+  const tc=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=msg;
+  tc.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

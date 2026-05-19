@@ -1,0 +1,38 @@
+:root {
+  --primary: #0F1C2E;
+  --primary-light: #1A2E48;
+  --accent: #00D4AA;
+  --accent-dark: #00A882;
+  --accent-light: rgba(0,212,170,0.12);
+  --risk-green: #2ECC71;
+  --risk-green-bg: rgba(46,204,113,0.12);
+  --risk-yellow: #F39C12;
+  --risk-yellow-bg: rgba(243,156,18,0.12);
+  --risk-red: #E74C3C;
+  --risk-red-bg: rgba(231,76,60,0.12);
+  --risk-blue: #3498DB;
+  --risk-blue-bg: rgba(52,152,219,0.12);
+  --bg: #F4F7FB;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFD;
+  --border: rgba(15,28,46,0.08);
+  --border-strong: rgba(15,28,46,0.16);
+  --text: #0F1C2E;
+  --text-2: #4A5568;
+  --text-3: #8A9BAE;
+  --text-inv: #FFFFFF;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 1px 4px rgba(15,28,46,0.06);
+  --shadow: 0 4px 20px rgba(15,28,46,0.08);
+  --shadow-lg: 0 8px 40px rgba(15,28,46,0.12);
+  --shadow-accent: 0 8px 32px rgba(0,212,170,0.25);
+  --t: 0.22s ease;
+  --t-slow: 0.4s ease;
+  --navbar-h: 68px;
+  --sidebar-w: 260px;
+}

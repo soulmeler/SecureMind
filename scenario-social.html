@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Сценарий: Социальная инженерия — SecureMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #171b26;
+  --surface-2: #1e2333;
+  --border: #2a2f40;
+  --accent: #00D4AA;
+  --accent-light: rgba(0,212,170,0.1);
+  --text-1: #eef0f6;
+  --text-2: #9ba3bb;
+  --text-3: #5c6480;
+  --risk-red: #ff4d4d;
+  --risk-red-bg: rgba(255,77,77,0.1);
+  --risk-green: #00c48c;
+  --risk-green-bg: rgba(0,196,140,0.1);
+  --risk-yellow: #f5a623;
+  --risk-yellow-bg: rgba(245,166,35,0.1);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text-1); min-height: 100vh; }
+
+.app-layout { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 240px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  padding: 24px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.sidebar-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 36px; padding: 0 8px; }
+.logo-icon { width: 32px; height: 32px; background: var(--accent-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.logo-text { font-family: var(--font-head); font-size: 1.1rem; font-weight: 800; color: var(--text-1); }
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: var(--radius); color: var(--text-2); text-decoration: none;
+  font-size: .9rem; font-weight: 500; transition: all .2s;
+}
+.sidebar-nav-item:hover { background: var(--surface-2); color: var(--text-1); }
+.sidebar-nav-item.active { background: var(--accent-light); color: var(--accent); }
+.sidebar-section { font-size: .7rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; padding: 16px 12px 4px; }
+
+/* Main */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.app-topbar {
+  display: flex; align-items: center; gap: 12px; padding: 16px 28px;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+  font-family: var(--font-head); font-size: 1.05rem; font-weight: 700;
+}
+.page-content { flex: 1; padding: 28px; overflow-y: auto; }
+
+.risk-badge {
+  padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700;
+  font-family: var(--font-head);
+}
+.risk-badge.red { background: var(--risk-red-bg); color: var(--risk-red); }
+.risk-badge.yellow { background: var(--risk-yellow-bg); color: var(--risk-yellow); }
+.risk-badge.green { background: var(--risk-green-bg); color: var(--risk-green); }
+
+/* Card */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+  border-radius: var(--radius); font-family: var(--font-body); font-size: .9rem;
+  font-weight: 600; cursor: pointer; border: none; transition: all .2s; text-decoration: none;
+}
+.btn-lg { padding: 14px 28px; font-size: 1rem; }
+.btn-primary { background: var(--accent); color: #0a0f1a; }
+.btn-primary:hover { background: #00f0c0; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-1); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-success { background: var(--risk-green-bg); border: 1.5px solid var(--risk-green); color: var(--risk-green); }
+.btn-success:hover { background: var(--risk-green); color: #0a0f1a; }
+.btn-danger { background: var(--risk-red-bg); border: 1.5px solid var(--risk-red); color: var(--risk-red); }
+.btn-danger:hover { background: var(--risk-red); color: #fff; }
+
+/* Scenario layout */
+.scenario-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; height: calc(100vh - 130px); }
+.scenario-main { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.scenario-sidebar-panel { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+
+/* Messenger UI */
+.messenger-ui {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+}
+.messenger-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;
+}
+.messenger-avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; flex-shrink: 0;
+}
+.messenger-info { flex: 1; }
+.messenger-name { font-weight: 700; font-size: .95rem; }
+.messenger-status { font-size: .75rem; color: var(--accent); }
+
+.messenger-chat {
+  flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  min-height: 0;
+}
+.message-bubble {
+  max-width: 75%; border-radius: 16px; padding: 12px 16px; line-height: 1.5; font-size: .9rem;
+  animation: fadeUp .3s ease;
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.message-bubble.them { background: var(--surface-2); border-bottom-left-radius: 4px; align-self: flex-start; }
+.message-bubble.me { background: var(--accent); color: #0a0f1a; border-bottom-right-radius: 4px; align-self: flex-end; }
+.message-time { font-size: .7rem; color: var(--text-3); margin-top: 4px; }
+.message-wrapper { display: flex; flex-direction: column; }
+.message-wrapper.them { align-items: flex-start; }
+.message-wrapper.me { align-items: flex-end; }
+.message-sender { font-size: .72rem; font-weight: 700; color: var(--text-3); margin-bottom: 3px; padding: 0 4px; }
+
+/* Choices */
+.choices-area {
+  padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface);
+}
+.choices-title { font-size: .8rem; color: var(--text-3); font-weight: 600; margin-bottom: 10px; }
+.choices-grid { display: flex; flex-direction: column; gap: 8px; }
+.choice-btn {
+  padding: 10px 16px; background: var(--surface-2); border: 1.5px solid var(--border);
+  border-radius: var(--radius); color: var(--text-1); font-family: var(--font-body);
+  font-size: .88rem; cursor: pointer; text-align: left; transition: all .2s; font-weight: 500;
+}
+.choice-btn:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.choice-btn.correct { border-color: var(--risk-green); background: var(--risk-green-bg); color: var(--risk-green); pointer-events: none; }
+.choice-btn.wrong { border-color: var(--risk-red); background: var(--risk-red-bg); color: var(--risk-red); pointer-events: none; }
+.choice-btn.neutral { border-color: var(--border); background: var(--surface-2); color: var(--text-3); pointer-events: none; }
+
+/* Widget */
+.widget { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+.widget-title { font-family: var(--font-head); font-weight: 800; font-size: .9rem; margin-bottom: 12px; color: var(--text-1); }
+
+/* Scenario nav */
+.scenario-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.scenario-tab {
+  padding: 6px 14px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border); color: var(--text-3); background: transparent;
+  font-family: var(--font-body); transition: all .2s;
+}
+.scenario-tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.scenario-tab.done-ok { border-color: var(--risk-green); color: var(--risk-green); background: var(--risk-green-bg); }
+.scenario-tab.done-bad { border-color: var(--risk-red); color: var(--risk-red); background: var(--risk-red-bg); }
+
+/* Result screen */
+.result-screen { max-width: 600px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; gap: 20px; align-items: center; padding: 20px 0; }
+.result-icon { font-size: 5rem; }
+.result-score { font-family: var(--font-head); font-size: 4rem; font-weight: 800; color: var(--accent); }
+.result-label { color: var(--text-2); font-size: 1rem; margin-top: -12px; }
+.result-level-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 28px; display: flex; align-items: center; gap: 16px; width: 100%; }
+.result-breakdown { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.result-row { display: flex; justify-content: space-between; font-size: .9rem; color: var(--text-2); }
+
+/* Toast */
+#toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+.toast { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: var(--radius); font-size: .88rem; font-weight: 500; animation: slideIn .3s ease; max-width: 320px; }
+.toast.success { background: var(--risk-green-bg); border: 1px solid var(--risk-green); color: var(--risk-green); }
+.toast.error { background: var(--risk-red-bg); border: 1px solid var(--risk-red); color: var(--risk-red); }
+.toast.warning { background: var(--risk-yellow-bg); border: 1px solid var(--risk-yellow); color: var(--risk-yellow); }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* Progress bar */
+.progress-bar-outer { height: 6px; background: var(--border); border-radius: 99px; margin-top: 4px; }
+.progress-bar-inner { height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+
+/* Typing indicator */
+.typing-indicator { display: flex; gap: 4px; align-items: center; padding: 12px 16px; background: var(--surface-2); border-radius: 16px; border-bottom-left-radius: 4px; align-self: flex-start; }
+.typing-dot { width: 6px; height: 6px; background: var(--text-3); border-radius: 50%; animation: bounce .8s infinite; }
+.typing-dot:nth-child(2) { animation-delay: .15s; }
+.typing-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,80%,100%{transform:scale(0.8);opacity:.5}40%{transform:scale(1.2);opacity:1} }
+
+/* Alert box */
+.alert-box { padding: 12px 16px; border-radius: var(--radius); font-size: .85rem; line-height: 1.6; }
+.alert-box.info { background: rgba(99,135,255,0.1); border: 1px solid rgba(99,135,255,0.3); color: #8faff5; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .scenario-layout { grid-template-columns: 1fr; }
+  .scenario-sidebar-panel { display: none; }
+  .sidebar { width: 200px; }
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <main class="main-content">
+    <div class="app-topbar">
+      <div>🎭 Социальная инженерия</div>
+      <span class="risk-badge red">Сложно</span>
+      <div style="margin-left:auto;font-family:var(--font-head);font-size:1.1rem;font-weight:800;color:var(--accent)" id="liveScore">0 / 500</div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Intro Screen -->
+      <div id="introScreen" class="card" style="max-width:680px;margin:0 auto;text-align:center;padding:48px 40px">
+        <div style="font-size:4rem;margin-bottom:16px">💬</div>
+        <h2 style="font-family:var(--font-head);font-size:1.8rem;margin-bottom:12px">Социальная инженерия</h2>
+        <p style="color:var(--text-2);margin-bottom:28px;line-height:1.7">
+          Незнакомцы пишут тебе в мессенджере. Каждый разговор — манипуляция с разной целью.<br><br>
+          Распознай тактику и выбери правильную реакцию в ветвящемся диалоге. Твои решения влияют на развитие событий и итоговый счёт.
+        </p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⏱ ~8 минут</strong><br><span style="color:var(--text-3)">Примерное время</span></div>
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>⭐ 500 очков</strong><br><span style="color:var(--text-3)">Максимум</span></div>
+          <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 20px;font-size:.85rem"><strong>💬 4 сценария</strong><br><span style="color:var(--text-3)">Разных атаки</span></div>
+        </div>
+        <div class="alert-box info" style="text-align:left;margin-bottom:24px">
+          💡 <strong>Совет:</strong> Социальные инженеры используют доверие, срочность, страх и авторитет. Всегда проверяй личность собеседника перед тем, как делиться данными.
+        </div>
+        <button onclick="startScenario()" class="btn btn-primary btn-lg">Начать сценарий →</button>
+      </div>
+
+      <!-- Scenario Screen -->
+      <div id="scenarioScreen" style="display:none">
+        <div class="scenario-tabs" id="scenarioTabs"></div>
+        <div class="scenario-layout">
+          <div class="scenario-main">
+            <div class="messenger-ui">
+              <div class="messenger-header">
+                <div class="messenger-avatar" id="chatAvatar">?</div>
+                <div class="messenger-info">
+                  <div class="messenger-name" id="chatName">—</div>
+                  <div class="messenger-status" id="chatStatus">●&nbsp;онлайн</div>
+                </div>
+                <span class="risk-badge" id="chatBadge" style="display:none"></span>
+              </div>
+              <div class="messenger-chat" id="messengerChat"></div>
+              <div class="choices-area" id="choicesArea" style="display:none">
+                <div class="choices-title">Как ты ответишь?</div>
+                <div class="choices-grid" id="choicesGrid"></div>
+              </div>
+            </div>
+            <div id="nextScenarioContainer" style="margin-top:16px;text-align:right" hidden>
+              <button class="btn btn-primary btn-sm" id="nextScenarioBtn" onclick="goNextScenario()">Следующий сценарий →</button>
+            </div>
+          </div>
+
+          <div class="scenario-sidebar-panel">
+            <div class="widget">
+              <div class="widget-title">Прогресс</div>
+              <div style="text-align:center;margin-bottom:8px">
+                <div style="font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--accent)" id="sideScore">0</div>
+                <div style="font-size:.8rem;color:var(--text-3)">очков</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--text-2);margin-bottom:6px" id="progressLabel">Сценарий 1 из 4</div>
+              <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+            </div>
+
+            <div class="widget">
+              <div class="widget-title">Тактики манипуляции</div>
+              <div style="font-size:.82rem;color:var(--text-2);line-height:2">
+                🔴 Имитация авторитета<br>
+                🔴 Создание срочности<br>
+                🔴 Эксплуатация доверия<br>
+                🟡 Запрос данных «для проверки»<br>
+                🟡 Давление на жалость<br>
+                🟢 Правило: не делись паролями<br>
+                🟢 Верификация через офиц. каналы
+              </div>
+            </div>
+
+            <div class="widget" id="tipsWidget" style="display:none">
+              <div class="widget-title">💡 Что произошло</div>
+              <div id="tipsContent" style="font-size:.83rem;color:var(--text-2);line-height:1.7"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Screen -->
+      <div id="resultScreen" style="display:none">
+        <div class="result-screen">
+          <div class="result-icon" id="resIcon"></div>
+          <div class="result-score" id="resScore"></div>
+          <div class="result-label">из 500 очков</div>
+          <div class="result-level-card" id="resLevelCard"></div>
+          <div class="result-breakdown" id="resBreakdown"></div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="scenarios.html" class="btn btn-outline btn-lg">← Все сценарии</a>
+            <a href="dashboard.html" class="btn btn-primary btn-lg">На главную →</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ─── SCENARIOS DATA ───────────────────────────────────────────────────────────
+const scenarios = [
+  {
+    id: 0,
+    name: 'Тех.поддержка',
+    avatar: '🎧',
+    avatarColor: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    contact: 'Максим — Техподдержка',
+    tactic: 'Имитация техподдержки',
+    description: 'Атака "vishing / pretexting" — злоумышленник притворяется сотрудником техподдержки',
+    messages: [
+      { from: 'them', text: 'Здравствуйте! Я Максим из технической поддержки вашего банка. Мы зафиксировали подозрительную активность на вашем аккаунте 🔒', delay: 800 },
+      { from: 'them', text: 'Для предотвращения блокировки мне нужно подтвердить вашу личность. Назовите последние 4 цифры карты и код из SMS, который сейчас придёт.', delay: 1600 },
+    ],
+    choices: [
+      { text: '📱 Хорошо, карта заканчивается на 4821. Жду SMS...', correct: false, feedback: 'Никогда не называйте CVV, коды из SMS или данные карты незнакомцам! Настоящая техподдержка банка никогда не просит эти данные в мессенджере.' },
+      { text: '🤔 Как вы связаны с моим банком? Откуда у вас мой номер?', correct: true, feedback: 'Отлично! Вы задали правильные вопросы. Атакующие редко готовы к верификации — это их останавливает.' },
+      { text: '✅ Перезвоню сам на официальный номер банка с сайта', correct: true, feedback: 'Превосходно! Это лучшая защита — всегда используй официальные каналы связи, а не контакты от незнакомца.' },
+      { text: '❌ Ничего не дам. Вы явно мошенник!', correct: true, feedback: 'Верно! Блокировать подозрительный контакт — правильное решение.' }
+    ],
+    correctIndexes: [1, 2, 3],
+    followup: {
+      correct: 'Правильно поступили! Злоумышленник отключился. Банки никогда не запрашивают коды из SMS через мессенджеры.',
+      wrong: 'К сожалению, вы раскрыли данные мошеннику. Он немедленно попытался войти в ваш аккаунт. Всегда звоните на номер с обратной стороны карты!'
+    }
+  },
+  {
+    id: 1,
+    name: 'Коллега Айгерим',
+    avatar: '👩',
+    avatarColor: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    contact: 'Айгерим (коллега?)',
+    tactic: 'Имитация коллеги',
+    description: 'Атака "pretexting" — злоумышленник притворяется коллегой, используя социальные сети для сбора имён',
+    messages: [
+      { from: 'them', text: 'Привет! Это Айгерим из отдела маркетинга 👋 Мы работаем вместе в Oskemen Hub, помнишь меня?', delay: 800 },
+      { from: 'them', text: 'Я сейчас на конференции и забыла корпоративный пароль от CRM. Срочно нужны данные для презентации клиенту. Можешь войти и прислать мне таблицу клиентов?', delay: 1600 },
+      { from: 'them', text: 'Шеф уже нервничает, очень срочно! 😰', delay: 2400 }
+    ],
+    choices: [
+      { text: '💻 Конечно, секунду! Что именно нужно прислать?', correct: false, feedback: 'Опасно! Вы только что согласились передать конфиденциальные данные клиентов. Даже если "Айгерим" — реальная коллега, данные нельзя передавать через мессенджер.' },
+      { text: '📞 Сейчас позвоню тебе — удостоверюсь, что это ты', correct: true, feedback: 'Правильно! Верификация звонком — надёжный способ убедиться в личности. Голос сложнее подделать.' },
+      { text: '🔒 Прости, данные клиентов нельзя передавать вне защищённых систем', correct: true, feedback: 'Отлично! Вы соблюли политику безопасности компании. Это именно то, что нужно делать.' },
+      { text: '👔 Свяжись с IT-отделом — они восстановят пароль быстро', correct: true, feedback: 'Верно! Перенаправление к официальным процедурам — правильная реакция.' }
+    ],
+    correctIndexes: [1, 2, 3],
+    followup: {
+      correct: 'Мудрое решение! Аккаунт "Айгерим" был взломан. Хакер рассчитывал на срочность и доверие к коллеге.',
+      wrong: 'Вы передали базу клиентов злоумышленнику. Аккаунт коллеги был скомпрометирован. Это утечка корпоративных данных!'
+    }
+  },
+  {
+    id: 2,
+    name: 'Розыгрыш призов',
+    avatar: '🎰',
+    avatarColor: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
+    contact: 'TechFest 2024 🏆',
+    tactic: 'Ложный выигрыш / quid pro quo',
+    description: 'Атака "quid pro quo" — предложение чего-то привлекательного в обмен на данные',
+    messages: [
+      { from: 'them', text: '🎉 Поздравляем! Вы выиграли MacBook Pro на TechFest 2024! Ваш email был выбран из 50 000 участников!', delay: 800 },
+      { from: 'them', text: 'Для получения приза подтвердите личность: ФИО, ИИН, номер карты для перечисления налогового вычета (1 500 тг)', delay: 1400 },
+      { from: 'them', text: 'У нас есть только 2 часа! После — приз уходит следующему победителю ⏰', delay: 2000 }
+    ],
+    choices: [
+      { text: '🤩 Вау, отлично! Заполняю форму прямо сейчас', correct: false, feedback: 'Ловушка сработала. ИИН и данные карты позволят мошенникам оформить кредит на ваше имя. "Налоговый вычет" — классическая схема.' },
+      { text: '🔍 Я не участвовал в TechFest. Вы ошиблись контактом', correct: true, feedback: 'Хорошо! Если вы не участвовали — это явный признак мошенничества. Вы правы!' },
+      { text: '🚩 Настоящие призы не требуют ИИН и данные карты. Это мошенничество', correct: true, feedback: 'Верно! Легитимные розыгрыши никогда не просят финансовые данные или ИИН для получения приза.' },
+      { text: '⏸️ Подожду — сначала проверю TechFest на официальном сайте', correct: true, feedback: 'Отлично! Всегда проверяй подобные сообщения через официальные каналы, игнорируя "дедлайны".' }
+    ],
+    correctIndexes: [1, 2, 3],
+    followup: {
+      correct: 'Правильно! TechFest 2024 не проводил такого розыгрыша. Дедлайны — инструмент давления, чтобы вы не успели проверить.',
+      wrong: 'Вы передали ИИН и данные карты. Мошенники могут оформить микрозаём или получить доступ к счёту. Немедленно заблокируйте карту!'
+    }
+  },
+  {
+    id: 3,
+    name: 'Романтик Дамир',
+    avatar: '💌',
+    avatarColor: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)',
+    contact: 'Дамир (из Tinder)',
+    tactic: 'Романтическое мошенничество',
+    description: 'Атака "romance scam" — длительное выстраивание доверия для финансового обмана',
+    messages: [
+      { from: 'them', text: 'Привет! Мы совпали в приложении 😊 Я инженер, сейчас в командировке в Дубае. Ты такая интересная!', delay: 800 },
+      { from: 'them', text: 'Мы уже 3 недели общаемся, и ты мне очень нравишься ❤️ Хочу приехать познакомиться лично!', delay: 1400 },
+      { from: 'them', text: 'Но возникла проблема... Мою зарплату задержали из-за банковского сбоя. Не мог бы ты одолжить 150 000 тг на билет? Сразу верну как прилечу 🙏', delay: 2200 }
+    ],
+    choices: [
+      { text: '💸 Конечно, ты же такой(ая) надёжный(ая)! Скидываю', correct: false, feedback: '"Romance scam" — один из самых прибыльных видов мошенничества. После перевода человек исчезает. Жертвы теряют от тысяч до миллионов тенге.' },
+      { text: '🎥 Давай созвонимся по видео прямо сейчас — хочу видеть тебя', correct: true, feedback: 'Умно! Видеозвонок сложно подделать. Мошенники обычно уклоняются под разными предлогами.' },
+      { text: '❌ Я не переводлю деньги людям, с которыми не встречался лично', correct: true, feedback: 'Правильное правило! Никогда не переводи деньги незнакомцам — независимо от симпатии или истории.' },
+      { text: '🤔 Почему именно я? У тебя нет коллег или друзей рядом?', correct: true, feedback: 'Хороший вопрос! Изоляция — ключевой элемент романтического мошенничества. Ответ раскроет манипуляцию.' }
+    ],
+    correctIndexes: [1, 2, 3],
+    followup: {
+      correct: 'Правильно! Реальные люди не просят деньги у знакомых через приложения. "Дамир" — скорее всего, группа мошенников.',
+      wrong: 'Вы перевели деньги. "Дамир" стал недоступен сразу после получения. Romance scam — очень распространённая схема, будьте осторожны!'
+    }
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let score = 0;
+let currentScenario = 0;
+let scenarioResults = {}; // id -> true/false
+let scenarioDone = {};    // id -> true/false
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function startScenario() {
+  document.getElementById('introScreen').style.display = 'none';
+  document.getElementById('scenarioScreen').style.display = 'block';
+  renderTabs();
+  loadScenario(0);
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('scenarioTabs');
+  tabs.innerHTML = scenarios.map(s => {
+    let cls = 'scenario-tab';
+    if (s.id === currentScenario) cls += ' active';
+    else if (scenarioDone[s.id]) cls += (scenarioResults[s.id] ? ' done-ok' : ' done-bad');
+    return `<button class="${cls}" onclick="loadScenario(${s.id})">${s.id + 1}. ${s.name}</button>`;
+  }).join('');
+}
+
+function loadScenario(id) {
+  currentScenario = id;
+  const s = scenarios[id];
+  const chat = document.getElementById('messengerChat');
+  chat.innerHTML = '';
+  document.getElementById('choicesArea').style.display = 'none';
+  document.getElementById('tipsWidget').style.display = 'none';
+
+  document.getElementById('chatName').textContent = s.contact;
+  document.getElementById('chatAvatar').textContent = s.avatar;
+  document.getElementById('chatAvatar').style.background = s.avatarColor;
+  document.getElementById('chatStatus').textContent = '● онлайн';
+
+  const badge = document.getElementById('chatBadge');
+  badge.style.display = 'none';
+
+  renderTabs();
+  updateProgressWidget(id);
+
+  if (scenarioDone[id]) {
+    // Re-show completed scenario
+    s.messages.forEach(m => appendMessage(m.from, m.text));
+    const wasCorrect = scenarioResults[id];
+    showFollowupMessage(s, wasCorrect);
+    showTips(s, wasCorrect);
+    return;
+  }
+
+  // Play messages one by one
+  let delay = 400;
+  s.messages.forEach((m, i) => {
+    if (i === 0) {
+      setTimeout(() => appendMessage(m.from, m.text), delay);
+      delay += m.delay || 1000;
+    } else {
+      // Show typing indicator then message
+      setTimeout(() => showTyping(), delay - 400);
+      setTimeout(() => {
+        removeTyping();
+        appendMessage(m.from, m.text);
+      }, delay);
+      delay += m.delay || 1000;
+    }
+  });
+
+  // Show choices after all messages
+  setTimeout(() => {
+    if (!scenarioDone[id]) showChoices(id);
+  }, delay + 200);
+}
+
+function appendMessage(from, text, extraClass = '') {
+  const chat = document.getElementById('messengerChat');
+  const wrapper = document.createElement('div');
+  wrapper.className = `message-wrapper ${from}`;
+
+  if (from === 'them') {
+    const sender = document.createElement('div');
+    sender.className = 'message-sender';
+    sender.textContent = scenarios[currentScenario].contact;
+    wrapper.appendChild(sender);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = `message-bubble ${from} ${extraClass}`;
+  bubble.innerHTML = text;
+
+  const time = document.createElement('div');
+  time.className = 'message-time';
+  time.textContent = now();
+
+  wrapper.appendChild(bubble);
+  wrapper.appendChild(time);
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const chat = document.getElementById('messengerChat');
+  const t = document.createElement('div');
+  t.id = 'typingIndicator';
+  t.className = 'typing-indicator';
+  t.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chat.appendChild(t);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function showChoices(id) {
+  const s = scenarios[id];
+  const area = document.getElementById('choicesArea');
+  const grid = document.getElementById('choicesGrid');
+  area.style.display = 'block';
+  grid.innerHTML = s.choices.map((c, i) =>
+    `<button class="choice-btn" onclick="pickChoice(${id}, ${i})">${c.text}</button>`
+  ).join('');
+}
+
+function pickChoice(scenarioId, choiceIdx) {
+  const s = scenarios[scenarioId];
+  const c = s.choices[choiceIdx];
+  const wasCorrect = s.correctIndexes.includes(choiceIdx);
+  scenarioResults[scenarioId] = wasCorrect;
+  scenarioDone[scenarioId] = true;
+
+  // Score
+  const pts = wasCorrect ? 125 : -25;
+  score = Math.max(0, score + pts);
+  document.getElementById('liveScore').textContent = score + ' / 500';
+  document.getElementById('sideScore').textContent = score;
+  showToast(wasCorrect ? `✅ Верно! +125 очков` : `❌ Неверно. -25 очков`, wasCorrect ? 'success' : 'error');
+
+  // Show choice result in buttons
+  const grid = document.getElementById('choicesGrid');
+  const btns = grid.querySelectorAll('.choice-btn');
+  btns.forEach((btn, i) => {
+    if (i === choiceIdx) btn.className = `choice-btn ${wasCorrect ? 'correct' : 'wrong'}`;
+    else btn.className = 'choice-btn neutral';
+  });
+
+  // Hide choices area, show feedback
+  setTimeout(() => {
+    document.getElementById('choicesArea').style.display = 'none';
+    // User's message bubble
+    appendMessage('me', c.text);
+    // Delay, then followup
+    setTimeout(() => {
+      showTyping();
+      setTimeout(() => {
+        removeTyping();
+        showFollowupMessage(s, wasCorrect);
+        showTips(s, wasCorrect);
+        renderTabs();
+        updateProgressWidget(currentScenario);
+        const doneCount = Object.keys(scenarioDone).length;
+        const total = scenarios.length;
+        const nextContainer = document.getElementById('nextScenarioContainer');
+        // Check if all done
+        if (doneCount === total) {
+          if (nextContainer) nextContainer.hidden = false, document.getElementById('nextScenarioBtn').textContent = 'Показать результат →';
+        } else {
+          if (nextContainer) {
+            nextContainer.hidden = false;
+            document.getElementById('nextScenarioBtn').textContent = 'Следующий сценарий →';
+          }
+        }
+      }, 1200);
+    }, 600);
+  }, 800);
+}
+
+function goNextScenario() {
+  const doneCount = Object.keys(scenarioDone).length;
+  const total = scenarios.length;
+  const nextContainer = document.getElementById('nextScenarioContainer');
+  if (doneCount === total) {
+    if (nextContainer) nextContainer.hidden = true;
+    showResult();
+    return;
+  }
+  let nextId = currentScenario + 1;
+  if (nextId >= total) nextId = 0;
+  while (scenarioDone[nextId] && doneCount < total) {
+    nextId = (nextId + 1) % total;
+  }
+  loadScenario(nextId);
+  if (nextContainer) nextContainer.hidden = true;
+}
+
+function showFollowupMessage(s, wasCorrect) {
+  const text = wasCorrect ? s.followup.correct : s.followup.wrong;
+  const badge = document.getElementById('chatBadge');
+  if (wasCorrect) {
+    badge.textContent = '✅ Защищён';
+    badge.className = 'risk-badge green';
+  } else {
+    badge.textContent = '⚠️ Попался';
+    badge.className = 'risk-badge red';
+  }
+  badge.style.display = 'inline-block';
+  appendMessage('them', text);
+}
+
+function showTips(s, wasCorrect) {
+  const widget = document.getElementById('tipsWidget');
+  const content = document.getElementById('tipsContent');
+  widget.style.display = 'block';
+  content.innerHTML = `
+    <div style="margin-bottom:8px"><strong style="color:${wasCorrect ? 'var(--risk-green)' : 'var(--risk-red)'}">${wasCorrect ? '✅ Вы справились!' : '❌ Атака удалась'}</strong></div>
+    <div style="margin-bottom:8px"><strong>Тактика:</strong> ${s.tactic}</div>
+    <div>${s.description}</div>
+  `;
+}
+
+function updateProgressWidget(id) {
+  const done = Object.keys(scenarioDone).length;
+  document.getElementById('progressLabel').textContent = `Сценарий ${done} из ${scenarios.length}`;
+  document.getElementById('progressBar').style.width = (done / scenarios.length * 100) + '%';
+}
+
+function showResult() {
+  document.getElementById('scenarioScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'block';
+
+  const pct = Math.round(score / 500 * 100);
+  const correct = Object.values(scenarioResults).filter(v => v).length;
+
+  document.getElementById('resIcon').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '📚';
+  document.getElementById('resScore').textContent = score;
+
+  const levels = [
+    { min: 80, icon: '🛡️', label: 'Эксперт по безопасности', desc: 'Вы умело распознаёте манипуляции!' },
+    { min: 50, icon: '🔍', label: 'Хороший результат', desc: 'Несколько атак удались, но вы учитесь.' },
+    { min: 0, icon: '📖', label: 'Нужно больше практики', desc: 'Повторите сценарии и запомните тактики.' }
+  ];
+  const lv = levels.find(l => pct >= l.min);
+  document.getElementById('resLevelCard').innerHTML = `
+    <span style="font-size:2rem">${lv.icon}</span>
+    <div><strong style="font-size:1.1rem">${lv.label}</strong><br><span style="color:var(--text-2);font-size:.88rem">${lv.desc}</span></div>
+  `;
+
+  document.getElementById('resBreakdown').innerHTML = `
+    <div class="result-row"><span>Верных решений</span><strong style="color:var(--risk-green)">${correct} из ${scenarios.length}</strong></div>
+    <div class="result-row"><span>Итоговый счёт</span><strong>${score} / 500</strong></div>
+    <div class="result-row"><span>Точность</span><strong>${pct}%</strong></div>
+  `;
+
+  // Save progress (ключ совпадает с progress.html: "social")
+  try {
+    const user = JSON.parse(localStorage.getItem('sm_user') || '{}');
+    if (!user.scenarios) user.scenarios = {};
+    const prev = user.scenarios.social || {};
+    const ts = Date.now();
+    user.scenarios.social = {
+      done: true,
+      score: Math.max(prev.score || 0, pct),
+      lastPlayed: ts,
+      attempts: (prev.attempts || 0) + 1
+    };
+    user.xp = (user.xp || 0) + Math.round(score / 10);
+    localStorage.setItem('sm_user', JSON.stringify(user));
+  } catch(e) {}
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function now() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function showToast(msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = msg;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+<script src="chatbot.js"></script>
+</body>
+</html>

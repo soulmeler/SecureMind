@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title id="pageTitle">SecureMind — Цифровая безопасность для школьников</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="variables.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="components.css">
+<link rel="stylesheet" href="landing.css">
+</head>
+<body>
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div>
+      <span class="logo-text">SecureMind</span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#features" class="nav-link" data-i18n="nav_features">Возможности</a>
+      <a href="#how" class="nav-link" data-i18n="nav_how">Как работает</a>
+      <a href="#scenarios" class="nav-link" data-i18n="nav_scenarios">Сценарии</a>
+      <a href="#faq" class="nav-link" data-i18n="nav_faq">FAQ</a>
+    </div>
+    <div class="nav-actions">
+      <button class="lang-toggle" id="langToggle" onclick="toggleLang()" title="Қазақша / Русский">KZ</button>
+      <a href="login.html" class="btn btn-outline btn-sm" data-i18n="nav_login">Войти</a>
+      <a href="register.html" class="btn btn-primary btn-sm" data-i18n="nav_register">Начать бесплатно</a>
+      <button class="nav-burger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<canvas id="heroCanvas"></canvas>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge" data-i18n="hero_badge">🛡️ Бесплатно для школьников и студентов</div>
+    <h1 class="hero-title"><span data-i18n="hero_title1">Научись</span> <span class="hero-accent" data-i18n="hero_title2">думать как хакер</span><span data-i18n="hero_title3">, чтобы защититься</span></h1>
+    <p class="hero-sub" data-i18n="hero_sub">Интерактивная платформа, которая учит школьников распознавать фишинг, мошенничество и киберугрозы через реальные сценарии</p>
+    <div class="hero-cta">
+      <a href="register.html" class="btn btn-primary btn-lg" data-i18n="hero_cta1">🚀 Пройти тест бесплатно</a>
+      <a href="#how" class="btn btn-outline btn-lg" data-i18n="hero_cta2">Как это работает →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item"><span class="stat-num" id="cnt1">0</span><span class="stat-label" data-i18n="stat1">сценариев</span></div>
+      <div class="stat-sep"></div>
+      <div class="stat-item"><span class="stat-num" id="cnt2">0</span><span class="stat-label" data-i18n="stat2">вопросов диагностики</span></div>
+      <div class="stat-sep"></div>
+      <div class="stat-item"><span class="stat-num" id="cnt3">0</span><span class="stat-label" data-i18n="stat3">уровней мастерства</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-mockup">
+      <div class="mockup-bar"><span></span><span></span><span></span></div>
+      <div class="mockup-content">
+        <div class="email-item danger"><span class="email-icon">⚠️</span><div class="email-info"><strong data-i18n="mockup1_title">Ваш аккаунт будет заблокирован!</strong><span>security-alert@bank-secure-ru.com</span></div><span class="risk-badge red" data-i18n="mockup1_badge">Фишинг</span></div>
+        <div class="email-item warning"><span class="email-icon">🤔</span><div class="email-info"><strong data-i18n="mockup2_title">Вы выиграли iPhone 15!</strong><span>promo@apple-gift-winners.ru</span></div><span class="risk-badge yellow" data-i18n="mockup2_badge">Подозрение</span></div>
+        <div class="email-item safe"><span class="email-icon">✅</span><div class="email-info"><strong data-i18n="mockup3_title">Ваш заказ отправлен</strong><span>orders@kaspi.kz</span></div><span class="risk-badge green" data-i18n="mockup3_badge">Безопасно</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header"><h2 data-i18n="feat_title">Что ты научишься распознавать</h2><p data-i18n="feat_sub">7 типов киберугроз, с которыми сталкиваются школьники каждый день</p></div>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-red-bg)">🎣</div><h3 data-i18n="f1_title">Фишинг</h3><p data-i18n="f1_desc">Поддельные письма, которые крадут пароли и деньги</p><span class="risk-badge red" data-i18n="risk_high">Высокий риск</span></div>
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-red-bg)">🎭</div><h3 data-i18n="f2_title">Социальная инженерия</h3><p data-i18n="f2_desc">Манипуляции и давление, чтобы получить твои данные</p><span class="risk-badge red" data-i18n="risk_high">Высокий риск</span></div>
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-yellow-bg)">🌐</div><h3 data-i18n="f3_title">Поддельные сайты</h3><p data-i18n="f3_desc">Копии настоящих сайтов, созданные для обмана</p><span class="risk-badge yellow" data-i18n="risk_mid">Средний риск</span></div>
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-yellow-bg)">📱</div><h3 data-i18n="f4_title">QR-мошенничество</h3><p data-i18n="f4_desc">Вредоносные QR-коды в публичных местах</p><span class="risk-badge yellow" data-i18n="risk_mid">Средний риск</span></div>
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-green-bg)">🔑</div><h3 data-i18n="f5_title">Гигиена паролей</h3><p data-i18n="f5_desc">Как создать и хранить надёжные пароли</p><span class="risk-badge green" data-i18n="risk_skill">Навык защиты</span></div>
+      <div class="feature-card"><div class="feature-icon" style="background:var(--risk-red-bg)">💀</div><h3 data-i18n="f6_title">Вредоносное ПО</h3><p data-i18n="f6_desc">Вирусы, трояны и опасные вложения в письмах</p><span class="risk-badge red" data-i18n="risk_high">Высокий риск</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-header"><h2 data-i18n="how_title">Как это работает</h2><p data-i18n="how_sub">Три простых шага от новичка до эксперта по кибербезопасности</p></div>
+    <div class="steps">
+      <div class="step-card"><div class="step-num">01</div><div class="step-icon">🧪</div><h3 data-i18n="step1_title">Пройди диагностику</h3><p data-i18n="step1_desc">15 вопросов определят твой текущий уровень и составят персональный план обучения</p></div>
+      <div class="step-arrow">→</div>
+      <div class="step-card"><div class="step-num">02</div><div class="step-icon">🎮</div><h3 data-i18n="step2_title">Тренируйся на сценариях</h3><p data-i18n="step2_desc">Реалистичные симуляции почты, браузера и мессенджеров. Ошибайся в безопасной среде</p></div>
+      <div class="step-arrow">→</div>
+      <div class="step-card"><div class="step-num">03</div><div class="step-icon">🏆</div><h3 data-i18n="step3_title">Получи результат</h3><p data-i18n="step3_desc">Персональная аналитика, уровни мастерства, значки и сертификат по завершении</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="scenarios-preview" id="scenarios">
+  <div class="container">
+    <div class="section-header"><h2 data-i18n="sc_title">Интерактивные сценарии</h2><p data-i18n="sc_sub">Каждый сценарий — это реальная ситуация с немедленной обратной связью</p></div>
+    <div class="scenario-cards">
+      <div class="sc-card" onclick="location.href='register.html'"><span class="sc-badge red" data-i18n="sc_badge_hard">Сложно</span><div class="sc-icon">📧</div><h3 data-i18n="sc1_title">Фишинговое письмо</h3><p data-i18n="sc1_desc">Найди все признаки мошеннического письма</p><div class="sc-meta"><span data-i18n="sc_meta_time10">⏱ 10 мин</span><span data-i18n="sc_meta_pts">⭐ 100 очков</span></div></div>
+      <div class="sc-card" onclick="location.href='register.html'"><span class="sc-badge red" data-i18n="sc_badge_hard">Сложно</span><div class="sc-icon">💬</div><h3 data-i18n="sc2_title">Социальная инженерия</h3><p data-i18n="sc2_desc">Распознай манипуляцию в диалоге</p><div class="sc-meta"><span data-i18n="sc_meta_time8">⏱ 8 мин</span><span data-i18n="sc_meta_pts">⭐ 100 очков</span></div></div>
+      <div class="sc-card" onclick="location.href='register.html'"><span class="sc-badge yellow" data-i18n="sc_badge_mid">Средне</span><div class="sc-icon">🌐</div><h3 data-i18n="sc3_title">Поддельный сайт</h3><p data-i18n="sc3_desc">Найди 8 скрытых признаков фейка</p><div class="sc-meta"><span data-i18n="sc_meta_time12">⏱ 12 мин</span><span data-i18n="sc_meta_pts">⭐ 100 очков</span></div></div>
+      <div class="sc-card" onclick="location.href='register.html'"><span class="sc-badge yellow" data-i18n="sc_badge_mid">Средне</span><div class="sc-icon">📲</div><h3 data-i18n="sc4_title">QR-мошенничество</h3><p data-i18n="sc4_desc">Что таится за этим QR-кодом?</p><div class="sc-meta"><span data-i18n="sc_meta_time6">⏱ 6 мин</span><span data-i18n="sc_meta_pts">⭐ 100 очков</span></div></div>
+    </div>
+    <div class="scenarios-cta"><a href="register.html" class="btn btn-primary btn-lg" data-i18n="sc_cta">Попробовать все 7 сценариев →</a></div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-header"><h2 data-i18n="faq_title">Частые вопросы</h2></div>
+    <div class="faq-list">
+      <div class="faq-item"><button class="faq-q" data-i18n="faq1_q">Нужно ли устанавливать что-то?</button><div class="faq-a" data-i18n="faq1_a">Нет! SecureMind работает прямо в браузере на телефоне или компьютере. Интернет нужен только для первого запуска — потом платформа работает офлайн.</div></div>
+      <div class="faq-item"><button class="faq-q" data-i18n="faq2_q">Это бесплатно для учеников?</button><div class="faq-a" data-i18n="faq2_a">Да, полностью бесплатно. Все 7 сценариев, диагностика и аналитика доступны без оплаты.</div></div>
+      <div class="faq-item"><button class="faq-q" data-i18n="faq3_q">Как учитель может следить за прогрессом класса?</button><div class="faq-a" data-i18n="faq3_a">Учитель регистрируется с ролью «Учитель», создаёт класс и приглашает учеников. В дашборде видна вся статистика класса в реальном времени.</div></div>
+      <div class="faq-item"><button class="faq-q" data-i18n="faq4_q">На каких языках доступна платформа?</button><div class="faq-a" data-i18n="faq4_a">На русском и казахском языках. Переключить язык можно в правом верхнем углу в любой момент.</div></div>
+      <div class="faq-item"><button class="faq-q" data-i18n="faq5_q">Мои данные в безопасности?</button><div class="faq-a" data-i18n="faq5_a">Все данные хранятся локально в вашем браузере. Мы не передаём личную информацию третьим лицам.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo"><div class="logo-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5V10c0 4.1 3 7.9 7 8.9 4-1 7-4.8 7-8.9V5.5L10 2z" fill="#00D4AA"/></svg></div><span class="logo-text">SecureMind</span></a>
+        <p data-i18n="footer_tagline">Платформа цифровой безопасности для школьников Казахстана</p>
+      </div>
+      <div class="footer-links">
+        <a href="#features" data-i18n="nav_features">Возможности</a><a href="#how" data-i18n="nav_how">Как работает</a><a href="login.html" data-i18n="nav_login">Войти</a><a href="register.html" data-i18n="footer_register">Регистрация</a>
+      </div>
+      <div class="footer-lang">
+        <button class="lang-btn active" id="footerLangRu" onclick="setLang('ru')">Русский</button>
+        <button class="lang-btn" id="footerLangKz" onclick="setLang('kz')">Қазақша</button>
+      </div>
+    </div>
+    <div class="footer-bottom" data-i18n="footer_copyright">© 2026 SecureMind. Бесплатно для школ Казахстана</div>
+  </div>
+</footer>
+
+<script>
+const i18n = {
+  ru: {
+    pageTitle: 'SecureMind — Цифровая безопасность для школьников',
+    nav_features: 'Возможности', nav_how: 'Как работает', nav_scenarios: 'Сценарии', nav_faq: 'FAQ',
+    nav_login: 'Войти', nav_register: 'Начать бесплатно', footer_register: 'Регистрация',
+    hero_badge: '🛡️ Бесплатно для школьников и студентов',
+    hero_title1: 'Научись', hero_title2: 'думать как хакер', hero_title3: ', чтобы защититься',
+    hero_sub: 'Интерактивная платформа, которая учит школьников распознавать фишинг, мошенничество и киберугрозы через реальные сценарии',
+    hero_cta1: '🚀 Пройти тест бесплатно', hero_cta2: 'Как это работает →',
+    stat1: 'сценариев', stat2: 'вопросов диагностики', stat3: 'уровней мастерства',
+    mockup1_title: 'Ваш аккаунт будет заблокирован!', mockup1_badge: 'Фишинг',
+    mockup2_title: 'Вы выиграли iPhone 15!', mockup2_badge: 'Подозрение',
+    mockup3_title: 'Ваш заказ отправлен', mockup3_badge: 'Безопасно',
+    feat_title: 'Что ты научишься распознавать', feat_sub: '7 типов киберугроз, с которыми сталкиваются школьники каждый день',
+    f1_title: 'Фишинг', f1_desc: 'Поддельные письма, которые крадут пароли и деньги',
+    f2_title: 'Социальная инженерия', f2_desc: 'Манипуляции и давление, чтобы получить твои данные',
+    f3_title: 'Поддельные сайты', f3_desc: 'Копии настоящих сайтов, созданные для обмана',
+    f4_title: 'QR-мошенничество', f4_desc: 'Вредоносные QR-коды в публичных местах',
+    f5_title: 'Гигиена паролей', f5_desc: 'Как создать и хранить надёжные пароли',
+    f6_title: 'Вредоносное ПО', f6_desc: 'Вирусы, трояны и опасные вложения в письмах',
+    // f7_* удалены (сценарий/тема «Утечка данных» убрана)
+    risk_high: 'Высокий риск', risk_mid: 'Средний риск', risk_skill: 'Навык защиты', risk_priv: 'Приватность',
+    how_title: 'Как это работает', how_sub: 'Три простых шага от новичка до эксперта по кибербезопасности',
+    step1_title: 'Пройди диагностику', step1_desc: '15 вопросов определят твой текущий уровень и составят персональный план обучения',
+    step2_title: 'Тренируйся на сценариях', step2_desc: 'Реалистичные симуляции почты, браузера и мессенджеров. Ошибайся в безопасной среде',
+    step3_title: 'Получи результат', step3_desc: 'Персональная аналитика, уровни мастерства, значки и сертификат по завершении',
+    sc_title: 'Интерактивные сценарии', sc_sub: 'Каждый сценарий — это реальная ситуация с немедленной обратной связью',
+    sc_badge_hard: 'Сложно', sc_badge_mid: 'Средне',
+    sc1_title: 'Фишинговое письмо', sc1_desc: 'Найди все признаки мошеннического письма',
+    sc2_title: 'Социальная инженерия', sc2_desc: 'Распознай манипуляцию в диалоге',
+    sc3_title: 'Поддельный сайт', sc3_desc: 'Найди 8 скрытых признаков фейка',
+    sc4_title: 'QR-мошенничество', sc4_desc: 'Что таится за этим QR-кодом?',
+    sc_meta_time10: '⏱ 10 мин', sc_meta_time8: '⏱ 8 мин', sc_meta_time12: '⏱ 12 мин', sc_meta_time6: '⏱ 6 мин', sc_meta_pts: '⭐ 100 очков',
+    sc_cta: 'Попробовать все 7 сценариев →',
+    faq_title: 'Частые вопросы',
+    faq1_q: 'Нужно ли устанавливать что-то?', faq1_a: 'Нет! SecureMind работает прямо в браузере на телефоне или компьютере. Интернет нужен только для первого запуска — потом платформа работает офлайн.',
+    faq2_q: 'Это бесплатно для учеников?', faq2_a: 'Да, полностью бесплатно. Все 7 сценариев, диагностика и аналитика доступны без оплаты.',
+    faq3_q: 'Как учитель может следить за прогрессом класса?', faq3_a: 'Учитель регистрируется с ролью «Учитель», создаёт класс и приглашает учеников. В дашборде видна вся статистика класса в реальном времени.',
+    faq4_q: 'На каких языках доступна платформа?', faq4_a: 'На русском и казахском языках. Переключить язык можно в правом верхнем углу в любой момент.',
+    faq5_q: 'Мои данные в безопасности?', faq5_a: 'Все данные хранятся локально в вашем браузере. Мы не передаём личную информацию третьим лицам.',
+    footer_tagline: 'Платформа цифровой безопасности для школьников Казахстана', footer_copyright: '© 2025 SecureMind. Бесплатно для школ Казахстана'
+  },
+  kz: {
+    pageTitle: 'SecureMind — Оқушыларға арналған сандық қауіпсіздік',
+    nav_features: 'Мүмкіндіктер', nav_how: 'Қалай жұмыс істейді', nav_scenarios: 'Сценарийлер', nav_faq: 'FAQ',
+    nav_login: 'Кіру', nav_register: 'Тегін бастау', footer_register: 'Тіркелу',
+    hero_badge: '🛡️ Оқушыларға мен студенттерге тегін',
+    hero_title1: 'Үйрен', hero_title2: 'хакер сияқты ойлауға', hero_title3: ', өзіңді қорғау үшін',
+    hero_sub: 'Оқушыларды фишинг, алаяқтық және киберқауіптерді нақты сценарийлер арқылы тануға үйрететін интерактивті платформа',
+    hero_cta1: '🚀 Тегін тест тапсыру', hero_cta2: 'Қалай жұмыс істейді →',
+    stat1: 'сценарий', stat2: 'диагностика сұрағы', stat3: 'шеберлік деңгейі',
+    mockup1_title: 'Тіркелгіңіз бұғатталады!', mockup1_badge: 'Фишинг',
+    mockup2_title: 'Сіз iPhone 15 жеңдіңіз!', mockup2_badge: 'Күмәнді',
+    mockup3_title: 'Тапсырысыңыз жіберілді', mockup3_badge: 'Қауіпсіз',
+    feat_title: 'Нені тануды үйренесің', feat_sub: 'Оқушылар әр күні кездесетін 6 түр киберқауіп',
+    f1_title: 'Фишинг', f1_desc: 'Құпия сөздер мен ақшаны ұрлайтын жалған хаттар',
+    f2_title: 'Әлеуметтік инженерия', f2_desc: 'Деректеріңді алу үшін манипуляция және қысым',
+    f3_title: 'Жалған сайттар', f3_desc: 'Алдау үшін жасалған нақты сайттардың көшірмелері',
+    f4_title: 'QR-алаяқтық', f4_desc: 'Жария орындардағы зиянды QR-кодтар',
+    f5_title: 'Құпия сөз гигиенасы', f5_desc: 'Сенімді құпия сөздерді қалай жасау және сақтау',
+    f6_title: 'Зиянды бағдарлама', f6_desc: 'Вирустар, трояндар және хаттардағы қауіпті тіркелгілер',
+    // f7_* удалены (сценарий/тема «Утечка данных» убрана)
+    risk_high: 'Жоғары қауіп', risk_mid: 'Орташа қауіп', risk_skill: 'Қорғану дағдысы', risk_priv: 'Жеке өмір',
+    how_title: 'Қалай жұмыс істейді', how_sub: 'Киберқауіпсіздік бойынша жаңадан маманға дейін үш қарапайым қадам',
+    step1_title: 'Диагностикадан өт', step1_desc: '15 сұрақ ағымдағы деңгейіңді анықтап, жеке оқу жоспарын жасайды',
+    step2_title: 'Сценарийлерде жаттық', step2_desc: 'Пошта, браузер және мессенджерлердің шынайы симуляциялары. Қауіпсіз ортада қателес',
+    step3_title: 'Нәтиже алыңыз', step3_desc: 'Жеке аналитика, шеберлік деңгейлері, белгілер және аяқтағаннан кейін сертификат',
+    sc_title: 'Интерактивті сценарийлер', sc_sub: 'Әр сценарий — дереу кері байланысы бар нақты жағдай',
+    sc_badge_hard: 'Қиын', sc_badge_mid: 'Орташа',
+    sc1_title: 'Фишингтік хат', sc1_desc: 'Алаяқтық хаттың барлық белгілерін тап',
+    sc2_title: 'Әлеуметтік инженерия', sc2_desc: 'Диалогта манипуляцияны танып ал',
+    sc3_title: 'Жалған сайт', sc3_desc: '8 жасырын жалған белгілерді тап',
+    sc4_title: 'QR-алаяқтық', sc4_desc: 'Осы QR-кодтың артында не бар?',
+    sc_meta_time10: '⏱ 10 мин', sc_meta_time8: '⏱ 8 мин', sc_meta_time12: '⏱ 12 мин', sc_meta_time6: '⏱ 6 мин', sc_meta_pts: '⭐ 100 ұпай',
+    sc_cta: '6 сценарийдің барлығын көр →',
+    faq_title: 'Жиі қойылатын сұрақтар',
+    faq1_q: 'Бірдеңе орнату керек пе?', faq1_a: 'Жоқ! SecureMind телефонда немесе компьютерде браузерде тікелей жұмыс істейді. Интернет тек алғашқы іске қосу үшін қажет — содан кейін платформа офлайн жұмыс істейді.',
+    faq2_q: 'Оқушыларға тегін бе?', faq2_a: 'Иә, толығымен тегін. 6 сценарийдің барлығы, диагностика және аналитика төлемсіз қол жетімді.',
+    faq3_q: 'Мұғалім сынып прогрессін қалай бақылай алады?', faq3_a: 'Мұғалім «Мұғалім» рөлімен тіркеледі, сынып құрады және оқушыларды шақырады. Топтамада сыныптың барлық статистикасы нақты уақытта көрінеді.',
+    faq4_q: 'Платформа қандай тілдерде қол жетімді?', faq4_a: 'Орыс және қазақ тілдерінде. Тілді оң жақ жоғарғы бұрышта кез келген сәтте ауыстыруға болады.',
+    faq5_q: 'Деректерім қауіпсіз бе?', faq5_a: 'Барлық деректер браузеріңізде жергілікті сақталады. Жеке ақпаратты үшінші тарапқа бермейміз.',
+    footer_tagline: 'Қазақстан оқушыларына арналған сандық қауіпсіздік платформасы', footer_copyright: '© 2025 SecureMind. Қазақстан мектептеріне тегін'
+  }
+};
+let lang = localStorage.getItem('securemind_lang') || 'ru';
+function applyLang(l) {
+  if (!i18n[l]) return;
+  document.documentElement.lang = l === 'kz' ? 'kk' : 'ru';
+  document.title = i18n[l].pageTitle;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[l][key] !== undefined) el.textContent = i18n[l][key];
+  });
+  const toggle = document.getElementById('langToggle');
+  if (toggle) toggle.textContent = l === 'ru' ? 'KZ' : 'RU';
+  document.querySelectorAll('.footer-lang .lang-btn').forEach(btn => { btn.classList.remove('active'); });
+  const fr = document.getElementById('footerLangRu'), fk = document.getElementById('footerLangKz');
+  if (l === 'ru' && fr) fr.classList.add('active'); else if (fk) fk.classList.add('active');
+  localStorage.setItem('securemind_lang', l);
+}
+function setLang(l) { lang = l; applyLang(l); }
+function toggleLang() { lang = lang === 'ru' ? 'kz' : 'ru'; applyLang(lang); }
+applyLang(lang);
+
+window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',scrollY>40)});
+document.querySelectorAll('.faq-q').forEach(btn=>{btn.addEventListener('click',()=>{const item=btn.closest('.faq-item');const ans=item.querySelector('.faq-a');const isOpen=item.classList.contains('open');document.querySelectorAll('.faq-item').forEach(i=>{i.classList.remove('open');i.querySelector('.faq-a').classList.remove('open')});if(!isOpen){item.classList.add('open');ans.classList.add('open')}})});
+const canvas=document.getElementById('heroCanvas');const ctx=canvas.getContext('2d');let pts=[];
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+for(let i=0;i<80;i++)pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*2+1,a:Math.random()*.4+.1});
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>canvas.width)p.vx*=-1;if(p.y<0||p.y>canvas.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,170,${p.a})`;ctx.fill()});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,212,170,${.08*(1-d/100)})`;ctx.lineWidth=1;ctx.stroke()}}requestAnimationFrame(draw)}draw();
+function animCount(el,target){let s=0,t=null;function step(ts){if(!t)t=ts;const p=Math.min((ts-t)/1500,1);el.textContent=Math.floor(p*target);if(p<1)requestAnimationFrame(step)}requestAnimationFrame(step)}
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){animCount(document.getElementById('cnt1'),7);animCount(document.getElementById('cnt2'),15);animCount(document.getElementById('cnt3'),6);obs.disconnect()}})});
+obs.observe(document.querySelector('.hero-stats'));
+</script>
+</body>
+</html>
